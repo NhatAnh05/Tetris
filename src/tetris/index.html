@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tetris - Core Game</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="game-container">
+    <h1>TETRIS</h1>
+
+    <div class="game-layout">
+        <div class="board-container">
+            <canvas id="game-board" width="300" height="600"></canvas>
+        </div>
+
+        <div class="sidebar">
+            <div class="ìnfo-box">
+                <div>Điểm</div>
+                <strong id="score">0</strong>
+            </div>
+
+            <div class="ìnfo-box">
+                <div>Số dòng</div>
+                <strong id="lines">0</strong>
+            </div>
+
+            <div class="info-box">
+                <div>Trạng thái</div>
+                <strong id="game-state">SẴN SÀNG</strong>
+            </div>
+
+            <div class="controls">
+                <button id="start-btn">Bắt đầu</button>
+                <button id="pause-btn">Tạm dừng</button>
+                <button id="restart-btn">Chơi lại</button>
+            </div>
+
+            <div class="help">
+                <h3>Điều khiển</h3>
+                <p>← → : Di chuyển</p>
+                <p>↓ : Rơi nhanh</p>
+                <p>↑ : Xoay</p>
+                <p>Space : Rơi xuống</p>
+                <p>P : Tạm dừng</p>
+                <p>R : Chơi lại</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="js/board.js"></script>
+<script src="js/tetromino.js"></script>
+<script src="js/game.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

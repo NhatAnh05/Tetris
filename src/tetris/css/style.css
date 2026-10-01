@@ -1,0 +1,101 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: Arial, sans-serif;
+    background: #eeeeee;
+    color: #222222;
+}
+
+.game-container {
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+    margin: 0 0 20px;
+}
+
+/* xếp bảng game bên trái, thanh thông tin bên phải*/
+.game-layout {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.board-container {
+    border: 2px solid #222222;
+    background: #111111;
+}
+
+#game-board {
+    display: block;
+    background: #eeeeee;
+}
+
+.sidebar {
+    width: 180px;
+}
+
+.info-box,
+.controls,
+.help {
+    background: #ffffff;
+    border: 1px solid #cccccc;
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+.info-box strong {
+    display: block;
+    margin-top: 5px;
+    font-size: 24px;
+}
+
+.controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+button {
+    padding: 9px;
+    border: 1px solid #999999;
+    background: #f7f7f7;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #e7e7e7;
+}
+
+.help h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+.help p {
+    margin: 6px 0;
+    font-size: 13px;
+}
+
+@media (max-width: 600px) {
+    body {
+        align-items: flex-start;
+    }
+
+    .game-layout {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .sidebar {
+        width: 300px;
+    }
+}
