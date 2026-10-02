@@ -22,7 +22,6 @@ h1 {
     margin: 0 0 20px;
 }
 
-/* xếp bảng game bên trái, thanh thông tin bên phải*/
 .game-layout {
     display: flex;
     gap: 20px;
@@ -40,7 +39,7 @@ h1 {
 }
 
 .sidebar {
-    width: 180px;
+    width: 190px;
 }
 
 .info-box,
@@ -58,6 +57,29 @@ h1 {
     font-size: 24px;
 }
 
+#level-select {
+    width: 100%;
+    margin-top: 8px;
+    padding: 7px;
+}
+
+.next-piece-box {
+    text-align: center;
+}
+
+#next-piece-board {
+    display: block;
+    width: 120px;
+    height: 120px;
+    margin: 10px auto 0;
+    background: #eeeeee;
+    border: 1px solid #cccccc;
+}
+
+.hidden {
+    display: none;
+}
+
 .controls {
     display: flex;
     flex-direction: column;
@@ -73,6 +95,12 @@ button {
 
 button:hover {
     background: #e7e7e7;
+}
+
+button:disabled,
+#level-select:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
 }
 
 .help h3 {

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tetris - Core Game</title>
+    <title>Tetris Core Game</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -16,12 +16,24 @@
         </div>
 
         <div class="sidebar">
-            <div class="ìnfo-box">
+            <div class="info-box">
+                <div>Level</div>
+                <select id="level-select">
+                    <option value="0" selected>Level 0 - Core</option>
+                    <option value="1">Level 1 - Next Piece</option>
+                    <option value="2" disabled>Level 2 - Chưa thực hiện</option>
+                    <option value="3" disabled>Level 3 - Chưa thực hiện</option>
+                    <option value="4" disabled>Level 4 - Chưa thực hiện</option>
+                    <option value="5" disabled>Level 5 - Chưa thực hiện</option>
+                </select>
+            </div>
+
+            <div class="info-box">
                 <div>Điểm</div>
                 <strong id="score">0</strong>
             </div>
 
-            <div class="ìnfo-box">
+            <div class="info-box">
                 <div>Số dòng</div>
                 <strong id="lines">0</strong>
             </div>
@@ -29,6 +41,11 @@
             <div class="info-box">
                 <div>Trạng thái</div>
                 <strong id="game-state">SẴN SÀNG</strong>
+            </div>
+
+            <div id="next-piece-box" class="info-box next-piece-box hidden">
+                <div>Khối tiếp theo</div>
+                <canvas id="next-piece-board" width="120" height="120"></canvas>
             </div>
 
             <div class="controls">
