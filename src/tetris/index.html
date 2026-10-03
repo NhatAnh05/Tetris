@@ -10,22 +10,36 @@
 <div class="game-container">
     <h1>TETRIS</h1>
 
+    <!-- Bảng game -->
     <div class="game-layout">
         <div class="board-container">
             <canvas id="game-board" width="300" height="600"></canvas>
         </div>
 
+        <!-- Sidebar -->
         <div class="sidebar">
+
+            <!-- Level của game -->
             <div class="info-box">
                 <div>Level</div>
                 <select id="level-select">
                     <option value="0" selected>Level 0 - Core</option>
-                    <option value="1">Level 1 - Next Piece</option>
-                    <option value="2" disabled>Level 2 - Chưa thực hiện</option>
-                    <option value="3" disabled>Level 3 - Chưa thực hiện</option>
-                    <option value="4" disabled>Level 4 - Chưa thực hiện</option>
-                    <option value="5" disabled>Level 5 - Chưa thực hiện</option>
+                    <option value="1">Level 1 - Time Attack</option>
                 </select>
+            </div>
+
+            <!-- Hiển thị next piece -->
+            <div class="info-box next-pice-box">
+                <span>NEXT PIECE</span>
+
+                <canvas id="next-piece-board" width="120" height="120"></canvas>
+            </div>
+
+            <!-- Thời gian điếm ngược cho người chơi chọn level 1 -->
+            <div class="info-box" id="timer-box">
+                <span>THỜI GIAN</span>
+
+                <strong id="time-left">--</strong>
             </div>
 
             <div class="info-box">
@@ -43,11 +57,6 @@
                 <strong id="game-state">SẴN SÀNG</strong>
             </div>
 
-            <div id="next-piece-box" class="info-box next-piece-box hidden">
-                <div>Khối tiếp theo</div>
-                <canvas id="next-piece-board" width="120" height="120"></canvas>
-            </div>
-
             <div class="controls">
                 <button id="start-btn">Bắt đầu</button>
                 <button id="pause-btn">Tạm dừng</button>
@@ -62,6 +71,11 @@
                 <p>Space : Rơi xuống</p>
                 <p>P : Tạm dừng</p>
                 <p>R : Chơi lại</p>
+            </div>
+
+            <div class="level-note" id="level-note">
+                Level 0: Core Tetris.
+                Không có giới hạn thời gian.
             </div>
         </div>
     </div>

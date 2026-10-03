@@ -1,25 +1,41 @@
 class Game {
-    constructor(canvas, scoreElement, linesElement, stateElement) {
+    constructor(canvas, elements) {
         // Setup Canvas
         this.canvas = canvas;
         this.context = canvas.getContext("2d");
 
-        this.scoreElement = scoreElement;
-        this.linesElement = linesElement;
-        this.stateElement = stateElement;
+        this.scoreElement = elements.score;
+        this.linesElement = elements.lines;
+        this.stateElement = elements.state;
+        this.levelSelect = elements.levelSelect;
+        this.timeLeftElement = elements.timeLeft;
+        this.timerBox = elements.timerBox;
+        this.levelNote = elements.levelNote;
+
+        this.nextPieceCanvas = elements.nextPieceBoard ||
+            document.getElementById("next-piece-board");
+        this.nextPieceContext = this.nextPieceCanvas
+            ? this.nextPieceCanvas.getContext("2d")
+            : null;
 
         // Bàn chơi tiêu chuẩn với 10 cột, 20 dòng
         this.board = new Board(10, 20);
         this.currentPiece = null;
+        this.nextPiece = null;
 
         this.score = 0;
         this.lines = 0;
         this.state = "START";
+        this.currentLevel = 0;
 
         this.cellSize = 30; // Kích thước mỗi ô vuống là 30px
         this.dropInterval = 500; // Tốc độ rơi: 500ms/block
         this.lastTime = 0;
         this.animationFrameId = null;
+
+        // Level 1 - Time Attack
+        this.maxTime = 60;
+        this.timeLeft = 0;
 
         // Hardcode cho bảng màu riêng của từng loại khối
         this.colors = {
@@ -32,54 +48,79 @@ class Game {
             L: "#e67e22"
         };
 
+        this.nextPiece = this.createRandomPiece();
+
         this.updateUI();
         this.draw();
+        this.drawNextPiece();
+    }
+
+    selectLevel(level) {
+        if (this.state === "PLAYING" || this.state === "PAUSED") return;
+
+        this.currentLevel = Number(level);
+        this.updateUI();
+        this.draw();
+        this.drawNextPiece();
     }
 
     start() {
-        // Đang chơi hoặc thua rồi thì không start đè lên
-        if (this.state === "PLAYING") {
-            return;
-        }
-
-        if (this.state === "GAME_OVER") {
-            return;
-        }
+        if (this.state === "PLAYING" || this.state === "GAME_OVER") return;
 
         this.state = "PLAYING";
+        this.board.clear();
+        this.currentPiece = null;
+        this.score = 0;
+        this.lines = 0;
+        this.timeLeft = this.currentLevel === 1 ? this.maxTime : 0;
 
-        // Khởi tạo khối đầu tiên nếu chưa có
-        if (!this.currentPiece) {
-            this.spawnPiece();
+        if (!this.nextPiece) {
+            this.nextPiece = this.createRandomPiece();
         }
+
+        this.spawnPiece();
 
         this.lastTime = performance.now();
         this.cancelGameLoop();
-        this.gameLoop(this.lastTime); // Kích hoạt vòng lặp
         this.updateUI();
+        this.gameLoop(this.lastTime);
     }
 
-    // Logic hoạt động của game, chạy liên tục bằng requestAnimationFrame
     gameLoop(time) {
-        if (this.state !== "PLAYING") {
-            return;
-        }
+        if (this.state !== "PLAYING") return;
 
         const deltaTime = time - this.lastTime;
+        this.lastTime = time;
 
-        // Tới chu kỳ thì ép viên gạch rơi xuống 1 ô
+        if (this.currentLevel === 1) {
+            this.updateTime(deltaTime);
+            if (this.state !== "PLAYING") {
+                this.updateUI();
+                this.draw();
+                return;
+            }
+        }
+
         if (deltaTime >= this.dropInterval) {
             this.moveDown();
             this.lastTime = time;
         }
 
-        this.draw(); // Vẽ lại giao diện mỗi Frame
+        this.draw();
 
         this.animationFrameId =
-            requestAnimationFrame((nextTime) => this.gameLoop(nextTime));
+            requestAnimationFrame(nextTime => this.gameLoop(nextTime));
     }
 
-    // Tắt vòng lặp (dùng trong lúc pause hoặc ngỏm)
+    updateTime(deltaTime) {
+        this.timeLeft -= deltaTime / 1000;
+
+        if (this.timeLeft <= 0) {
+            this.timeLeft = 0;
+            this.timeOver();
+        }
+    }
+
     cancelGameLoop() {
         if (this.animationFrameId !== null) {
             cancelAnimationFrame(this.animationFrameId);
@@ -93,19 +134,19 @@ class Game {
         return new Tetromino(types[index]);
     }
 
-    // Đẩy 1 khối mới ra sân
     spawnPiece() {
-        this.currentPiece = this.createRandomPiece();
+        this.currentPiece = this.nextPiece || this.createRandomPiece();
+        this.nextPiece = this.createRandomPiece();
 
         const pieceWidth = this.currentPiece.shape[0].length;
 
-        // Setup tọa độ y trên đỉnh, x ra giữa board
         this.currentPiece.x =
             Math.floor((this.board.width - pieceWidth) / 2);
 
         this.currentPiece.y = 0;
 
-        // Vừa spam ra mà đã vào gạch cũ -> Bảo game over luôn
+        this.drawNextPiece();
+
         if (!this.isValidPosition(
             this.currentPiece,
             this.currentPiece.x,
@@ -115,28 +156,67 @@ class Game {
         }
     }
 
-    // Hàm quan trọng nhất: Check collision. Xuyên suốt game dùng liên tục
+    drawNextPiece() {
+        if (!this.nextPieceCanvas || !this.nextPieceContext) return;
+
+        const context = this.nextPieceContext;
+        const canvas = this.nextPieceCanvas;
+        const shape = this.nextPiece.shape;
+
+        context.clearRect(0, 0, canvas.width, canvas.height);
+
+        context.fillStyle = "#1e293b";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
+        const cellSize = 20;
+        const width = shape[0].length * cellSize;
+        const height = shape.length * cellSize;
+        const startX = (canvas.width - width) / 2;
+        const startY = (canvas.height - height) / 2;
+
+        context.fillStyle = this.colors[this.nextPiece.type] || "#555555";
+
+        for (let y = 0; y < shape.length; y++) {
+            for (let x = 0; x < shape[y].length; x++) {
+                if (shape[y][x] === 0) continue;
+
+                const pixelX = startX + x * cellSize;
+                const pixelY = startY + y * cellSize;
+
+                context.fillRect(
+                    pixelX,
+                    pixelY,
+                    cellSize,
+                    cellSize
+                );
+
+                context.strokeStyle = "#222222";
+                context.lineWidth = 1;
+                context.strokeRect(
+                    pixelX,
+                    pixelY,
+                    cellSize,
+                    cellSize
+                );
+            }
+        }
+    }
+
     isValidPosition(piece, offsetX, offsetY) {
         for (let y = 0; y < piece.shape.length; y++) {
             for (let x = 0; x < piece.shape[y].length; x++) {
-                if (piece.shape[y][x] === 0) {
-                    continue; // Chỗ trống trong grid khối thì bỏ qua
-                }
+                if (piece.shape[y][x] === 0) continue;
 
                 const boardX = offsetX + x;
                 const boardY = offsetY + y;
 
-                // Quét chạm biên trái, biên phải, đáy
                 if (
                     boardX < 0 ||
                     boardX >= this.board.width ||
                     boardY < 0 ||
                     boardY >= this.board.height
-                ) {
-                    return false;
-                }
+                ) return false;
 
-                // Quét chạm biên trái, biên phải, đáy[cite: 7]
                 if (this.board.getCell(boardX, boardY) !== 0) {
                     return false;
                 }
@@ -146,11 +226,8 @@ class Game {
         return true;
     }
 
-    // Các hàm move. Luôn check isValid trước, an toàn mới cho biến thay đổi
     moveLeft() {
-        if (this.state !== "PLAYING" || !this.currentPiece) {
-            return;
-        }
+        if (this.state !== "PLAYING" || !this.currentPiece) return;
 
         const newX = this.currentPiece.x - 1;
 
@@ -164,9 +241,7 @@ class Game {
     }
 
     moveRight() {
-        if (this.state !== "PLAYING" || !this.currentPiece) {
-            return;
-        }
+        if (this.state !== "PLAYING" || !this.currentPiece) return;
 
         const newX = this.currentPiece.x + 1;
 
@@ -180,13 +255,10 @@ class Game {
     }
 
     moveDown() {
-        if (this.state !== "PLAYING" || !this.currentPiece) {
-            return false;
-        }
+        if (this.state !== "PLAYING" || !this.currentPiece) return false;
 
         const newY = this.currentPiece.y + 1;
 
-        // Rơi bình thường nếu vị trí bên dưới rỗng
         if (this.isValidPosition(
             this.currentPiece,
             this.currentPiece.x,
@@ -196,16 +268,12 @@ class Game {
             return true;
         }
 
-        // Chạm đáy hoặc chạm cục khác rồi -> Đóng băng luôn
         this.lockPiece();
         return false;
     }
 
-    // Drop cứng: Dùng vòng while đẩy y xuống tới khi kịch sàn
     hardDrop() {
-        if (this.state !== "PLAYING" || !this.currentPiece) {
-            return;
-        }
+        if (this.state !== "PLAYING" || !this.currentPiece) return;
 
         while (this.isValidPosition(
             this.currentPiece,
@@ -219,11 +287,8 @@ class Game {
     }
 
     rotatePiece() {
-        if (this.state !== "PLAYING" || !this.currentPiece) {
-            return;
-        }
+        if (this.state !== "PLAYING" || !this.currentPiece) return;
 
-        // Clone cục mới ra xoay nháp, ok mới ném vào cục chính (ngừa lỗi đè viền)
         const rotatedPiece = this.currentPiece.clone();
         rotatedPiece.rotate();
 
@@ -236,22 +301,16 @@ class Game {
         }
     }
 
-    // Gắn cứng khối vào board matrix và tính điểm
     lockPiece() {
-        if (!this.currentPiece) {
-            return;
-        }
+        if (!this.currentPiece) return;
 
         for (let y = 0; y < this.currentPiece.shape.length; y++) {
             for (let x = 0; x < this.currentPiece.shape[y].length; x++) {
-                if (this.currentPiece.shape[y][x] === 0) {
-                    continue;
-                }
+                if (this.currentPiece.shape[y][x] === 0) continue;
 
                 const boardX = this.currentPiece.x + x;
                 const boardY = this.currentPiece.y + y;
 
-                // Set giá trị id loại khối vào vị trí grid
                 if (this.board.isInside(boardX, boardY)) {
                     this.board.setCell(
                         boardX,
@@ -262,42 +321,54 @@ class Game {
             }
         }
 
-        // Check xem có ăn hàng nào không
         const clearedLines = this.board.clearLines();
 
         if (clearedLines > 0) {
             this.lines += clearedLines;
             this.score += this.calculateScore(clearedLines);
+
+            if (this.currentLevel === 1) {
+                this.addTimeForLines(clearedLines);
+            }
         }
 
-        // Đẻ khối mới lặp lại quy trình
         this.spawnPiece();
         this.updateUI();
     }
 
-    // Bảng quy đổi điểm: 1 nháy 100đ, tetris 4 nháy 800đ
     calculateScore(linesCleared) {
         switch (linesCleared) {
-            case 1:
-                return 100;
-            case 2:
-                return 300;
-            case 3:
-                return 500;
-            case 4:
-                return 800;
-            default:
-                return 0;
+            case 1: return 100;
+            case 2: return 300;
+            case 3: return 500;
+            case 4: return 800;
+            default: return 0;
         }
     }
 
-    // Handle cờ pause game
+    getTimeBonus(linesCleared) {
+        switch (linesCleared) {
+            case 1: return 2;
+            case 2: return 4;
+            case 3: return 6;
+            case 4: return 10;
+            default: return 0;
+        }
+    }
+
+    addTimeForLines(linesCleared) {
+        this.timeLeft = Math.min(
+            this.timeLeft + this.getTimeBonus(linesCleared),
+            this.maxTime
+        );
+    }
+
     togglePause() {
         if (this.state === "PLAYING") {
             this.state = "PAUSED";
             this.cancelGameLoop();
             this.updateUI();
-            this.draw(); // Cập nhật ui lên "TẠM DỪNG"
+            this.draw();
             return;
         }
 
@@ -305,12 +376,11 @@ class Game {
             this.state = "PLAYING";
             this.lastTime = performance.now();
             this.cancelGameLoop();
-            this.gameLoop(this.lastTime);
             this.updateUI();
+            this.gameLoop(this.lastTime);
         }
     }
 
-    // Handle cờ thua game
     gameOver() {
         this.state = "GAME_OVER";
         this.cancelGameLoop();
@@ -318,33 +388,82 @@ class Game {
         this.draw();
     }
 
-    // Reset hết mọi thứ ván mới
+    timeOver() {
+        this.state = "GAME_OVER";
+        this.timeLeft = 0;
+        this.cancelGameLoop();
+        this.updateUI();
+        this.draw();
+    }
+
     restart() {
         this.cancelGameLoop();
         this.board.clear();
         this.currentPiece = null;
+        this.nextPiece = this.createRandomPiece();
+
         this.score = 0;
         this.lines = 0;
         this.state = "PLAYING";
+        this.timeLeft = this.currentLevel === 1 ? this.maxTime : 0;
 
         this.spawnPiece();
+
         this.lastTime = performance.now();
         this.updateUI();
         this.draw();
+        this.drawNextPiece();
         this.gameLoop(this.lastTime);
     }
 
-    // Update chuỗi HTML
     updateUI() {
         this.scoreElement.textContent = String(this.score);
         this.linesElement.textContent = String(this.lines);
 
-        switch (this.state) {
-            case "START": this.stateElement.textContent = "SẴN SÀNG"; break;
-            case "PLAYING": this.stateElement.textContent = "ĐANG CHƠI"; break;
-            case "PAUSED": this.stateElement.textContent = "TẠM DỪNG"; break;
-            case "GAME_OVER": this.stateElement.textContent = "GAME OVER"; break;
+        if (this.currentLevel === 1) {
+            this.timeLeftElement.textContent =
+                Math.ceil(this.timeLeft) + " giây";
+
+            if (this.timeLeft <= 10 && this.state === "PLAYING") {
+                this.timerBox.classList.add("warning");
+            } else {
+                this.timerBox.classList.remove("warning");
+            }
+        } else {
+            this.timeLeftElement.textContent = "--";
+            this.timerBox.classList.remove("warning");
         }
+
+        switch (this.state) {
+            case "START":
+                this.stateElement.textContent = "SẴN SÀNG";
+                break;
+
+            case "PLAYING":
+                this.stateElement.textContent = "ĐANG CHƠI";
+                break;
+
+            case "PAUSED":
+                this.stateElement.textContent = "TẠM DỪNG";
+                break;
+
+            case "GAME_OVER":
+                this.stateElement.textContent =
+                    this.currentLevel === 1 && this.timeLeft === 0
+                        ? "TIME OVER"
+                        : "GAME OVER";
+                break;
+        }
+
+        this.levelSelect.value = String(this.currentLevel);
+        this.levelSelect.disabled =
+            this.state === "PLAYING" ||
+            this.state === "PAUSED";
+
+        this.levelNote.textContent =
+            this.currentLevel === 0
+                ? "Level 0: Core Tetris. Không có giới hạn thời gian."
+                : "Level 1 - Time Attack: 60 giây. Xóa dòng để cộng thêm thời gian, tối đa 60 giây.";
     }
 
     // Canvas Draw: Vẽ ô grid
@@ -355,13 +474,27 @@ class Game {
                 const pixelX = x * this.cellSize;
                 const pixelY = y * this.cellSize;
 
-                this.context.fillStyle = value === 0 ? "#eeeeee" : (this.colors[value] || "#555555");
-                this.context.fillRect(pixelX, pixelY, this.cellSize, this.cellSize);
+                this.context.fillStyle =
+                    value === 0
+                        ? "#eeeeee"
+                        : (this.colors[value] || "#555555");
+
+                this.context.fillRect(
+                    pixelX,
+                    pixelY,
+                    this.cellSize,
+                    this.cellSize
+                );
 
                 // Kẻ thêm cái viền mỏng mỏng bao khối
                 this.context.strokeStyle = "#cccccc";
                 this.context.lineWidth = 1;
-                this.context.strokeRect(pixelX, pixelY, this.cellSize, this.cellSize);
+                this.context.strokeRect(
+                    pixelX,
+                    pixelY,
+                    this.cellSize,
+                    this.cellSize
+                );
             }
         }
     }
@@ -370,46 +503,79 @@ class Game {
     drawCurrentPiece() {
         if (!this.currentPiece) return;
 
-        this.context.fillStyle = this.colors[this.currentPiece.type];
+        this.context.fillStyle =
+            this.colors[this.currentPiece.type];
 
         for (let y = 0; y < this.currentPiece.shape.length; y++) {
             for (let x = 0; x < this.currentPiece.shape[y].length; x++) {
                 if (this.currentPiece.shape[y][x] === 0) continue;
 
-                const pixelX = (this.currentPiece.x + x) * this.cellSize;
-                const pixelY = (this.currentPiece.y + y) * this.cellSize;
+                const pixelX =
+                    (this.currentPiece.x + x) * this.cellSize;
 
-                this.context.fillRect(pixelX, pixelY, this.cellSize, this.cellSize);
+                const pixelY =
+                    (this.currentPiece.y + y) * this.cellSize;
+
+                this.context.fillRect(
+                    pixelX,
+                    pixelY,
+                    this.cellSize,
+                    this.cellSize
+                );
+
                 this.context.strokeStyle = "#222222";
-                this.context.lineWidth = 1;
-                this.context.strokeRect(pixelX, pixelY, this.cellSize, this.cellSize);
+                this.context.strokeRect(
+                    pixelX,
+                    pixelY,
+                    this.cellSize,
+                    this.cellSize
+                );
             }
         }
     }
 
     // Canvas Draw: Đổ layer mờ mờ đè lên lúc pause/end game
-    drawOverlay(message) {
-        this.context.fillStyle = "rgba(0, 0, 0, 0.55)";
-        this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    drawOverlay(message, secondaryMessage = "") {
+        this.context.fillStyle =
+            "rgba(0, 0, 0, 0.55)";
+
+        this.context.fillRect(
+            0,
+            0,
+            this.canvas.width,
+            this.canvas.height
+        );
 
         this.context.fillStyle = "#ffffff";
-        this.context.font = "bold 24px Arial";
         this.context.textAlign = "center";
         this.context.textBaseline = "middle";
-        this.context.fillText(message, this.canvas.width / 2, this.canvas.height / 2);
+        this.context.font = "bold 24px Arial";
+
+        this.context.fillText(
+            message,
+            this.canvas.width / 2,
+            this.canvas.height / 2
+        );
+
+        if (secondaryMessage) {
+            this.context.font = "15px Arial";
+
+            this.context.fillText(
+                secondaryMessage,
+                this.canvas.width / 2,
+                this.canvas.height / 2 + 38
+            );
+        }
     }
 
-    drawGameOver() {
-        this.drawOverlay("GAME OVER");
-        this.context.fillStyle = "#ffffff";
-        this.context.font = "16px Arial";
-        this.context.textAlign = "center";
-        this.context.fillText("Nhấn R để chơi lại", this.canvas.width / 2, this.canvas.height / 2 + 40);
-    }
-
-    // Chạy tổng lại hàm draw, luôn clear sạch canvas cũ trước khi vẽ frame mới
     draw() {
-        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.context.clearRect(
+            0,
+            0,
+            this.canvas.width,
+            this.canvas.height
+        );
+
         this.drawBoard();
         this.drawCurrentPiece();
 
@@ -418,7 +584,15 @@ class Game {
         } else if (this.state === "PAUSED") {
             this.drawOverlay("TẠM DỪNG");
         } else if (this.state === "GAME_OVER") {
-            this.drawGameOver();
+            const message =
+                this.currentLevel === 1 && this.timeLeft === 0
+                    ? "TIME OVER"
+                    : "GAME OVER";
+
+            this.drawOverlay(
+                message,
+                "Nhấn R hoặc Chơi lại để bắt đầu lại"
+            );
         }
     }
 }

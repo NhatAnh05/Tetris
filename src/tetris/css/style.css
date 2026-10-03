@@ -2,128 +2,264 @@
     box-sizing: border-box;
 }
 
+html,
 body {
+    width: 100%;
+    height: 100%;
     margin: 0;
-    min-height: 100vh;
+}
+
+body {
     display: flex;
     justify-content: center;
     align-items: center;
+
     font-family: Arial, sans-serif;
-    background: #eeeeee;
-    color: #222222;
+    background: #0f172a;
+    color: #fff;
+
+    overflow: hidden;
 }
 
+/* Khung game */
 .game-container {
-    padding: 20px;
+    --board-height: min(800px, calc(100vh - 110px));
+
+    padding: 15px 20px;
+
+    background: #1e293b;
+    border-radius: 10px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
+/* Tiêu đề */
 h1 {
-    text-align: center;
-    margin: 0 0 20px;
+    margin: 0 0 10px;
+
+    font-size: 32px;
+    letter-spacing: 4px;
+    color: #38bdf8;
 }
 
+/* Khu vực game */
 .game-layout {
     display: flex;
     gap: 20px;
-    align-items: flex-start;
+    align-items: stretch;
+
+    height: var(--board-height);
 }
 
+/* Bảng game */
 .board-container {
-    border: 2px solid #222222;
-    background: #111111;
+    height: var(--board-height);
+    aspect-ratio: 1 / 2;
+
+    padding: 3px;
+
+    background: #000;
+    border: 3px solid #334155;
+    border-radius: 6px;
 }
 
 #game-board {
     display: block;
-    background: #eeeeee;
-}
 
-.sidebar {
-    width: 190px;
-}
-
-.info-box,
-.controls,
-.help {
-    background: #ffffff;
-    border: 1px solid #cccccc;
-    padding: 12px;
-    margin-bottom: 12px;
-}
-
-.info-box strong {
-    display: block;
-    margin-top: 5px;
-    font-size: 24px;
-}
-
-#level-select {
     width: 100%;
-    margin-top: 8px;
-    padding: 7px;
+    height: 100%;
+
+    background: #111;
 }
 
-.next-piece-box {
-    text-align: center;
-}
+/* Sidebar */
+.sidebar {
+    width: 260px;
+    height: var(--board-height);
 
-#next-piece-board {
-    display: block;
-    width: 120px;
-    height: 120px;
-    margin: 10px auto 0;
-    background: #eeeeee;
-    border: 1px solid #cccccc;
-}
-
-.hidden {
-    display: none;
-}
-
-.controls {
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
 
+/* Box */
+.info-box,
+.controls {
+    padding: 12px;
+
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+}
+
+.info-box {
+    text-align: center;
+}
+
+.info-box > span {
+    display: block;
+
+    margin-bottom: 4px;
+
+    font-size: 11px;
+    font-weight: bold;
+    color: #94a3b8;
+}
+
+.info-box strong {
+    font-size: 22px;
+}
+
+/* Level */
+#level-select {
+    width: 100%;
+
+    padding: 7px;
+
+    background: #1e293b;
+    color: #fff;
+
+    border: 1px solid #38bdf8;
+    border-radius: 4px;
+
+    font-weight: bold;
+}
+
+/* Next Piece */
+.next-piece-box {
+    padding: 6px;
+}
+
+#next-piece-board {
+    display: block;
+
+    width: 125px;
+    height: 125px;
+
+    margin: 5px auto 0;
+
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 4px;
+}
+
+/* Timer */
+#timer-box.warning strong {
+    color: #ef4444;
+}
+
+/* Điểm + dòng */
+.stats-row {
+    display: flex;
+    gap: 8px;
+}
+
+.stats-row .info-box {
+    flex: 1;
+}
+
+/* Nút */
+.controls {
+    display: flex;
+    gap: 6px;
+}
+
 button {
-    padding: 9px;
-    border: 1px solid #999999;
-    background: #f7f7f7;
+    flex: 1;
+
+    padding: 9px 5px;
+
+    border: none;
+    border-radius: 4px;
+
+    color: #fff;
+    font-weight: bold;
+
     cursor: pointer;
 }
 
-button:hover {
-    background: #e7e7e7;
+#start-btn {
+    background: #3b82f6;
 }
 
-button:disabled,
-#level-select:disabled {
+#pause-btn {
+    background: #f59e0b;
+}
+
+#restart-btn {
+    background: #ef4444;
+}
+
+button:hover:not(:disabled) {
+    opacity: 0.85;
+}
+
+button:disabled {
+    background: #475569;
+    color: #94a3b8;
     cursor: not-allowed;
-    opacity: 0.6;
+}
+
+/* Hướng dẫn */
+.help {
+    padding: 10px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+
+    flex: 1;
+    min-height: 0;
 }
 
 .help h3 {
-    margin-top: 0;
-    margin-bottom: 10px;
+    margin: 0 0 6px;
+    font-size: 15px;
+    color: #94a3b8;
+    text-align: center;
 }
 
 .help p {
-    margin: 6px 0;
+    margin: 5px 0;
     font-size: 13px;
+    line-height: 1.3;
+    color: #cbd5e1;
 }
 
-@media (max-width: 600px) {
-    body {
-        align-items: flex-start;
-    }
+/* Thông tin level */
+.level-note {
+    padding: 10px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
 
-    .game-layout {
-        flex-direction: column;
-        align-items: center;
-    }
+    flex-shrink: 0;
 
-    .sidebar {
-        width: 300px;
-    }
+    font-size: 12px;
+    line-height: 1.3;
+    color: #e2e8f0;
+    text-align: center;
+}
+
+kbd {
+    display: inline-block;
+    margin-top: 4px;
+    padding: 3px 7px;
+    background: #1e293b;
+    border: 1px solid #475569;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: monospace;
+    color: #38bdf8;
+}
+
+/* Ghi chú level */
+.level-note {
+    padding: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: #e2e8f0;
+    text-align: center;
 }
