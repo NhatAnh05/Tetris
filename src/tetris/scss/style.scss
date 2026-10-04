@@ -1,0 +1,157 @@
+$primary-color: #e11d48;
+$background-color: #f8fafc;
+$text-color: #111827;
+$border-color: #e5e7eb;
+$panel-color: #ffffff;
+$board-color: #111827;
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+  background: $background-color;
+  color: $text-color;
+}
+
+.game-container {
+  width: 760px;
+  max-width: calc(100vw - 32px);
+  margin: 20px auto;
+}
+
+h1 {
+  margin: 0 0 16px;
+  text-align: center;
+  font-size: 28px;
+}
+
+.game-layout {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.board-panel,
+.info-panel,
+.info-box {
+  background: $panel-color;
+  border: 1px solid $border-color;
+}
+
+.board-panel {
+  padding: 8px;
+}
+
+#gameCanvas {
+  display: block;
+  width: 300px;
+  height: 600px;
+  background: $board-color;
+}
+
+.info-panel {
+  width: 220px;
+  padding: 12px;
+}
+
+.info-box {
+  margin-bottom: 10px;
+  padding: 10px;
+  text-align: center;
+}
+
+.info-box span {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.info-box strong {
+  display: block;
+  font-size: 22px;
+}
+
+.level-box {
+  margin-bottom: 10px;
+  padding: 10px;
+  border: 1px solid $border-color;
+}
+
+.level-box label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+#levelSelect {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid $border-color;
+  background: #fff;
+  color: $text-color;
+}
+
+.level-description {
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid $border-color;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+#nextCanvas,
+#holdCanvas {
+  display: block;
+  margin: 4px auto 0;
+  background: #fafafa;
+}
+
+.button-group {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+button {
+  border: 1px solid $primary-color;
+  background: $primary-color;
+  color: #fff;
+  padding: 9px;
+  cursor: pointer;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+.controls {
+  border-top: 1px solid $border-color;
+  padding-top: 8px;
+  font-size: 13px;
+}
+
+.controls p {
+  margin: 5px 0;
+}
+
+.message {
+  margin-top: 10px;
+  padding: 8px;
+  border: 1px solid $border-color;
+  font-size: 13px;
+  text-align: center;
+}
+
+@media (max-width: 700px) {
+  .game-layout {
+    flex-direction: column;
+    align-items: center;
+  }
+}

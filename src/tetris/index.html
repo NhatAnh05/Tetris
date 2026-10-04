@@ -2,9 +2,78 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tetris</title>
+    <link rel="stylesheet" href="scss/style.css">
 </head>
 <body>
+<div class="game-container">
+    <h1>TETRIS</h1>
+
+    <div class="game-layout">
+        <section class="board-panel">
+            <canvas id="gameCanvas" width="300" height="600"></canvas>
+        </section>
+
+        <aside class="info-panel">
+            <div class="level-box">
+                <label for="levelSelect">Level</label>
+                <select id="levelSelect">
+                    <option value="0">Level 0 - Core</option>
+                    <option value="1">Level 1 - Garbage Row</option>
+                    <option value="2">Level 2 - Bomb Block</option>
+                    <option value="3">Level 3 - Blocked Column</option>
+                </select>
+                
+                <p id="levelDescription" class="level-description">
+                    Tetris cơ bản với Board, Tetromino, di chuyển, xoay, Collision, Lock, Line Clear và tính điểm.
+                </p>
+            </div>
+
+            <div class="info-box">
+                <span>Score</span>
+                <strong id="score">0</strong>
+            </div>
+
+            <div class="info-box">
+                <span>Lines</span>
+                <strong id="lines">0</strong>
+            </div>
+
+            <div class="info-box">
+                <span>Next</span>
+                <canvas id="nextCanvas" width="120" height="120"></canvas>
+            </div>
+
+            <div class="info-box">
+                <span>Hold</span>
+                <canvas id="holdCanvas" width="120" height="120"></canvas>
+            </div>
+
+            <div class="button-group">
+                <button id="startBtn">Start</button>
+                <button id="pauseBtn">Pause</button>
+                <button id="restartBtn">Restart</button>
+            </div>
+
+            <div class="controls">
+                <p><b>← →</b> Di chuyển</p>
+                <p><b>↓</b> Rơi nhanh</p>
+                <p><b>↑</b> Xoay</p>
+                <p><b>C</b> Hold</p>
+                <p><b>Space</b> Thả xuống</p>
+                <p><b>P</b> Pause</p>
+            </div>
+
+            <div id="gameMessage" class="message">Nhấn Start để bắt đầu</div>
+        </aside>
+    </div>
+</div>
+
+<script src="js/tetromino.js"></script>
+<script src="js/game.js"></script>
+<script src="js/main.js"></script>
+<script src="js/board.js"></script>
 
 </body>
 </html>
