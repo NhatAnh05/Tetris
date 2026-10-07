@@ -148,6 +148,32 @@ class Game {
     }
 
     render(ctx) {
-        
+        for (let y = 0; y < 20; y++){
+            for (let x = 0; x < 10; x++){
+                ctx.fillStyle = this.board.cells[y][x] === 0 ? '#111' : COLORS[this.board.cells[y][x]];
+                ctx.fillRect(x*30, y*30, 29, 29);
+            }
+        }
+
+        if (this.currentPiece) {
+            let ghostY = this.getGhostY();
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            for (let r = 0; r < this.currentPiece.shape.length; r++){
+                for (let c = 0; c < this.currentPiece.shape[r].length; c++){
+                    if (this.currentPiece.shape[r][c]) {
+                        ctx.fillRect((this.currentPiece.x + c)*30, (ghostY+r)*30, 29, 29);
+                    }
+                }
+            }
+
+            ctx.fillStyle = COLORS[this.currentPiece.type];
+            for (let r = 0; r < this.currentPiece.shape.length; r++){
+                for (let c = 0; c < this.currentPiece.shape[r].length; c++){
+                    if (this.currentPiece.shape[r][c]) {
+                        ctx.fillRect((this.currentPiece.x + c)*30, (this.currentPiece.y + r)*30, 29, 29);
+                    }
+                }
+            }
+        }
     }
 }
