@@ -8,64 +8,83 @@
 </head>
 <body>
 <div class="game-container">
-    <h1>TETRIS</h1>
+    <header class="page-header">
+        <h1>TETRIS</h1>
+    </header>
 
     <div class="game-layout">
-        <section class="board-panel">
-            <canvas id="gameCanvas" width="300" height="600"></canvas>
-        </section>
+        <aside class="side-panel left-panel">
+            <section class="panel-section level-section">
+                <div class="section-title">Level</div>
 
-        <aside class="info-panel">
-            <div class="level-box">
-                <label for="levelSelect">Level</label>
                 <select id="levelSelect">
                     <option value="0">Level 0 - Core</option>
                     <option value="1">Level 1 - Garbage Row</option>
-                    <option value="2">Level 2 - Bomb Block</option>
-                    <option value="3">Level 3 - Blocked Column</option>
                 </select>
-                
+
                 <p id="levelDescription" class="level-description">
-                    Tetris cơ bản với Board, Tetromino, di chuyển, xoay, Collision, Lock, Line Clear và tính điểm.
+                    Tetris có bản với Board, Tetromino, di chuyển, xoay, Collision, Lock, Line Clear và tính điểm.
                 </p>
-            </div>
 
-            <div class="info-box">
-                <span>Score</span>
-                <strong id="score">0</strong>
-            </div>
+                <div id="levelGoal" class="level-goal">Mục tiêu: chơi tự do.</div>
+            </section>
 
-            <div class="info-box">
-                <span>Lines</span>
-                <strong id="lines">0</strong>
-            </div>
+            <section class="stats-list">
+                <div class="stat-box">
+                    <span>Level</span>
+                    <strong id="levelValue">0</strong>
+                </div>
 
-            <div class="info-box">
-                <span>Next</span>
-                <canvas id="nextCanvas" width="120" height="120"></canvas>
-            </div>
+                <div class="stat-box">
+                    <span>Score</span>
+                    <strong id="score">0</strong>
+                </div>
 
-            <div class="info-box">
-                <span>Hold</span>
-                <canvas id="holdCanvas" width="120" height="120"></canvas>
-            </div>
+                <div class="stat-box">
+                    <span>Lines</span>
+                    <strong id="lines">0</strong>
+                </div>
+            </section>
 
-            <div class="button-group">
-                <button id="startBtn">Start</button>
-                <button id="pauseBtn">Pause</button>
-                <button id="restartBtn">Restart</button>
-            </div>
-
-            <div class="controls">
-                <p><b>← →</b> Di chuyển</p>
-                <p><b>↓</b> Rơi nhanh</p>
-                <p><b>↑</b> Xoay</p>
-                <p><b>C</b> Hold</p>
-                <p><b>Space</b> Thả xuống</p>
-                <p><b>P</b> Pause</p>
-            </div>
+            <section class="preview-box hold-box">
+                <div class="section-title">Hold</div>
+                <canvas id="holdCanvas" width="180" height="120"></canvas>
+                <p class="preview-note">C = đổi / giữ quân</p>
+            </section>
 
             <div id="gameMessage" class="message">Nhấn Start để bắt đầu</div>
+        </aside>
+
+        <main class="play-panel">
+            <div class="board-wrap">
+                <canvas id="gameCanvas" width="360" height="720"></canvas>
+            </div>
+        </main>
+
+        <aside class="side-panel right-panel">
+            <section class="preview-box next-box">
+                <div class="section-title">Next Piece</div>
+                <canvas id="nextCanvas" width="180" height="120"></canvas>
+            </section>
+
+            <section class="button-panel">
+                <button id="startBtn" type="button">Start</button>
+                <button id="pauseBtn" type="button">Pause</button>
+                <button id="restartBtn" type="button">Restart</button>
+            </section>
+
+            <section class="controls">
+                <div class="section-title">Điều khiển</div>
+                <div class="controls-list">
+                    <div><b>← →</b><span>Di chuyển</span></div>
+                    <div><b>↓</b><span>Rơi nhanh</span></div>
+                    <div><b>↑</b><span>Xoay</span></div>
+                    <div><b>Space</b><span>Thả xuống</span></div>
+                    <div><b>C</b><span>Hold</span></div>
+                    <div><b>P</b><span>Pause</span></div>
+                    <div><b>R</b><span>Restart</span></div>
+                </div>
+            </section>
         </aside>
     </div>
 </div>

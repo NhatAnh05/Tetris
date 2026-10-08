@@ -1,4 +1,4 @@
-const TEROMINO_SHAPES = {
+const TETROMINO_SHAPES = {
     I: [
         [1, 1, 1, 1]
     ],
@@ -26,43 +26,51 @@ const TEROMINO_SHAPES = {
         [0, 0, 1],
         [1, 1, 1]
     ]
-}
+};
 
 const COLORS = {
-    I: '#00ffff',
-    O: '#ffff00',
-    T: '#800080',
-    S: '#00ff00',
-    Z: '#ff0000',
-    J: '#0000ff',
-    L: '#ffa500'
-}
+    I: '#06b6d4',
+    O: '#eab308',
+    T: '#8b5cf6',
+    S: '#22c55e',
+    Z: '#ef4444',
+    J: '#3b82f6',
+    L: '#f97316',
+    G: '#64748b'
+};
 
 function getRandomType() {
-    const keys = Object.keys(TEROMINO_SHAPES);
-    const randIndex = Math.floor(Math.random() * keys.length);
-    return keys[randIndex];
+    const keys = Object.keys(TETROMINO_SHAPES);
+    return keys[Math.floor(Math.random() * keys.length)];
+}
+
+function cloneMatrix(matrix) {
+    return matrix.map(row => [...row]);
 }
 
 function createPiece(type) {
-    return {
-        type: type,
-        shape: TEROMINO_SHAPES[type],
-        x: Math.floor(10 /2) - Math.floor(TEROMINO_SHAPES[type][0].length/2),
-        y: 0
-    }
+    const shape = cloneMatrix(TETROMINO_SHAPES[type]);
 
+    return {
+        type,
+        shape,
+        x: Math.floor((10 - shape[0].length) / 2),
+        y: 0
+    };
 }
 
 function rotateMatrix(matrix) {
-    const N = matrix.length;
-    const M = matrix[0].length;
-    let result = Array.from({length: M}, () => Array(N).fill(0));
+    const rows = matrix.length;
+    const cols = matrix[0].length;
 
-    //Thuật toán cho viêc xoay ma trận của các khối theo chiều kim đồng hôd
-    for (let y = 0; y < N; ++y) {
-        for (let x = 0; x < N; ++x) {
-            result[x][N - 1 - y] = matrix[y][x];
+    const result = Array.from(
+        { length: cols },
+        () => Array(rows).fill(0)
+    );
+
+    for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+            result[col][rows - 1 - row] = matrix[row][col];
         }
     }
 

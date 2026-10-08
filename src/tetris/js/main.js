@@ -1,114 +1,228 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-const nextCanvas = document.getElementById('nextCanvas')
+const nextCanvas = document.getElementById('nextCanvas');
 const nextCtx = nextCanvas.getContext('2d');
 
 const holdCanvas = document.getElementById('holdCanvas');
 const holdCtx = holdCanvas.getContext('2d');
 
+const levelValueElement = document.getElementById('levelValue');
 const scoreElement = document.getElementById('score');
 const linesElement = document.getElementById('lines');
-const messagesElement = document.getElementById('messages');
+const messageElement = document.getElementById('gameMessage');
 
 const levelSelector = document.getElementById('levelSelect');
-const levelDescription = document.getElementById('levelDescription');
+const levelDescriptionElement = document.getElementById('levelDescription');
+const levelGoalElement = document.getElementById('levelGoal');
 
-const levelDescription = {
+const startButton = document.getElementById('startBtn');
+const pauseButton = document.getElementById('pauseBtn');
+const restartButton = document.getElementById('restartBtn');
+
+const LEVEL_DESCRIPTIONS = {
     0: 'Tetris cơ bản với Board, Tetromino, di chuyển, xoay, Collision, Lock, Line Clear và tính điểm.',
-    1: 'Garbage Row: sau mỗi 4 Tetromino được Lock, hệ thống thêm một hàng rác ở phía dưới Board. Mục tiêu là xóa 3 hàng rác.',
-    2: 'Bomb Block: Bomb có thể xóa các block trong vùng 3 × 3. Mục tiêu là kích hoạt 3 Bomb.',
-    3: 'Blocked Column: một cột bị khóa tạm thời trong 3 lượt Tetromino. Mục tiêu là vượt qua 3 lần khóa cột.'
+    1: 'Sau mỗi 4 Tetromino được Lock, thêm 1 Garbage Row ở phía dưới. Mục tiêu là xóa 3 Garbage Row.'
 };
 
-function updateLevelDescription() {
-    levelDescription.textContent = levelDescription[levelSelector.value];
-}
+const LEVEL_GOALS = {
+    0: 'Mục tiêu: chơi tự do.',
+    1: 'Mục tiêu: xóa 3 Garbage Row.'
+};
 
 const game = new Game();
 
-function resizeCanvas() {
-    canvas.width = 300;
-    canvas.height = 600;
-    nextCanvas.width = 120;
-    nextCanvas.height = 120;
-    holdCanvas.width = 120;
-    holdCanvas.height = 120;
+function updateLevelText() {
+    const level = Number(levelSelector.value);
+
+    levelDescriptionElement.textContent = LEVEL_DESCRIPTIONS[level];
+    levelGoalElement.textContent = LEVEL_GOALS[level];
 }
 
-function render() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    game.render(ctx);
-
-    scoreElement.textContent = game.score;
-    linesElement.textContent = game.lines;
-
-    if (game.nextPiece) drawMiniPiece(nextCtx, game.nextPiece.type);
-
-    if (game.state === 'GAME_OVER') {
-        messagesElement.textContent = "GAME_OVER!";
-        messagesElement.style.color = 'red';
-    } else if (game.state === 'PAUSED') {
-        messagesElement.textContent = "PAUSED";
-        messagesElement.style.color = 'yellow';
-    } else if (game.state === 'START') {
-        messagesElement.textContent = "Nhấn Start để chơi";
-        messagesElement.style.color = 'white';
-    } else {
-        messagesElement.textContent = "Đang chơi (Core Game)";
-        messagesElement.style.color = 'white';
-    }
+function updateLevelSelectorState() {
+    levelSelector.disabled =
+        game.state === 'COUNTDOWN' ||
+        game.state === 'PLAYING' ||
+        game.state === 'PAUSED';
 }
 
-function drawMiniPiece(ctxMini, type) {
-    ctxMini.clearRect(0, 0, 120, 120);
+function drawMiniPiece(targetCtx, type) {
+    const width = 180;
+    const height = 120;
+    const cellSize = 26;
+
+    targetCtx.clearRect(0, 0, width, height);
+    targetCtx.fillStyle = '#f8fafc';
+    targetCtx.fillRect(0, 0, width, height);
+
     if (!type) return;
 
-    let shape = TEROMINO_SHAPES[type];
-    ctxMini.fillStyle = COLORS[type];
+    const shape = TETROMINO_SHAPES[type];
+    const shapeWidth = shape[0].length * cellSize;
+    const shapeHeight = shape.length * cellSize;
 
-    let offsetX = (120 -shape[0].length*30)/2;
-    let offsetY = (120 -shape.length*30)/2;
+    const offsetX = (width - shapeWidth) / 2;
+    const offsetY = (height - shapeHeight) / 2;
 
-    for (let r = 0; r < shape.length; r++){
-        for (let c = 0; c < shape[r].length; c++){
-            if (shape[r][c]){
-                ctxMini.fillRect(offsetX + c * 30, offsetY + r * 30, 29, 29);
-            }
+    for (let row = 0; row < shape.length; row++) {
+        for (let col = 0; col < shape[row].length; col++) {
+            if (!shape[row][col]) continue;
+
+            targetCtx.fillStyle = COLORS[type];
+            targetCtx.fillRect(
+                offsetX + col * cellSize + 1,
+                offsetY + row * cellSize + 1,
+                cellSize - 2,
+                cellSize - 2
+            );
+
+            targetCtx.strokeStyle = 'rgba(0, 0, 0, 0.18)';
+            targetCtx.strokeRect(
+                offsetX + col * cellSize + 1.5,
+                offsetY + row * cellSize + 1.5,
+                cellSize - 3,
+                cellSize - 3
+            );
         }
     }
 }
 
-function loop(time = 0) {
-    game.update(time);
-    render();
-    requestAnimationFrame(loop);
+function updateMessage() {
+    switch (game.state) {
+        case 'START':
+            messageElement.textContent = 'Nhấn Start để bắt đầu';
+            messageElement.className = 'message';
+            break;
+
+        case 'COUNTDOWN':
+            messageElement.textContent = `Bắt đầu sau ${game.countdownValue}`;
+            messageElement.className = 'message message-countdown';
+            break;
+
+        case 'PLAYING':
+            if (game.level === 1) {
+                messageElement.textContent =
+                    `Garbage đã xóa: ${game.garbageRowsCleared}/3`;
+            } else {
+                messageElement.textContent = 'Đang chơi Level 0';
+            }
+            messageElement.className = 'message message-playing';
+            break;
+
+        case 'PAUSED':
+            messageElement.textContent = 'ĐANG TẠM DỪNG - Nhấn Pause hoặc P để tiếp tục';
+            messageElement.className = 'message message-paused';
+            break;
+
+        case 'GAME_OVER':
+            messageElement.textContent = 'GAME OVER - Nhấn Restart hoặc R để chơi lại';
+            messageElement.className = 'message message-over';
+            break;
+
+        case 'LEVEL_COMPLETE':
+            messageElement.textContent =
+                'LEVEL 1 HOÀN THÀNH - Đã xóa 3 Garbage Row';
+            messageElement.className = 'message message-complete';
+            break;
+    }
 }
 
-document.getElementById('startBtn').addEventListener('click', () => {game.start()});
-document.getElementById('pauseBtn').addEventListener('click', () => {game.togglePause()});
-document.getElementById('restartBtn').addEventListener('click', () => {game.restart()});
+function updateButtons() {
+    pauseButton.disabled =
+        game.state !== 'PLAYING' && game.state !== 'PAUSED';
+
+    pauseButton.textContent =
+        game.state === 'PAUSED' ? 'Resume' : 'Pause';
+}
+
+function render() {
+    game.render(ctx);
+
+    levelValueElement.textContent = game.level;
+    scoreElement.textContent = game.score;
+    linesElement.textContent = game.lines;
+
+    drawMiniPiece(
+        nextCtx,
+        game.nextPiece ? game.nextPiece.type : null
+    );
+
+    drawMiniPiece(
+        holdCtx,
+        game.holdPiece
+    );
+
+    updateMessage();
+    updateButtons();
+    updateLevelSelectorState();
+}
+
+function startGame() {
+    game.setLevel(Number(levelSelector.value));
+    game.start();
+}
+
+startButton.addEventListener('click', startGame);
+
+pauseButton.addEventListener('click', () => {
+    game.togglePause();
+});
+
+restartButton.addEventListener('click', () => {
+    game.restart();
+});
+
+levelSelector.addEventListener('change', () => {
+    game.setLevel(Number(levelSelector.value));
+    updateLevelText();
+});
 
 document.addEventListener('keydown', (event) => {
+    const key = event.key;
+
+    if (
+        key === 'ArrowLeft' ||
+        key === 'ArrowRight' ||
+        key === 'ArrowDown' ||
+        key === 'ArrowUp' ||
+        key === ' '
+    ) {
+        event.preventDefault();
+    }
+
+    if (key === 'p' || key === 'P') {
+        game.togglePause();
+        return;
+    }
+
+    if (key === 'r' || key === 'R') {
+        game.restart();
+        return;
+    }
+
     if (game.state !== 'PLAYING') return;
 
-    switch (event.key) {
+    switch (key) {
         case 'ArrowLeft':
             game.moveLeft();
             break;
+
         case 'ArrowRight':
             game.moveRight();
             break;
+
         case 'ArrowDown':
             game.moveDown();
             break;
+
         case 'ArrowUp':
             game.rotate();
             break;
+
         case ' ':
             game.hardDrop();
             break;
+
         case 'c':
         case 'C':
             game.hold();
@@ -116,6 +230,12 @@ document.addEventListener('keydown', (event) => {
     }
 });
 
+function loop(time) {
+    game.update(time);
+    render();
+    requestAnimationFrame(loop);
+}
 
-resizeCanvas();
+updateLevelText();
+render();
 requestAnimationFrame(loop);
