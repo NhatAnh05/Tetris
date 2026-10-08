@@ -65,8 +65,9 @@ class Game {
         this.garbageRowsCreated = 0;
         this.garbageRowsCleared = 0;
 
+        // Bắt đầu bằng countdown 3 -> 2 -> 1.
         this.state = 'COUNTDOWN';
-        this.countdownStartTime = 0;
+        this.countdownStartTime = performance.now();
         this.countdownValue = 3;
         this.lastDropTime = 0;
 
@@ -78,15 +79,15 @@ class Game {
     }
 
     togglePause() {
-       if (this.state === 'PLAYING') {
-           this.state = 'PAUSED';
-           return;
-       }
+        if (this.state === 'PLAYING') {
+            this.state = 'PAUSED';
+            return;
+        }
 
-       if (this.state === 'PAUSED') {
-           this.state = 'PLAYING';
-           this.lastDropTime = performance.now();
-       }
+        if (this.state === 'PAUSED') {
+            this.state = 'PLAYING';
+            this.lastDropTime = performance.now();
+        }
     }
 
     update(time) {
@@ -98,12 +99,13 @@ class Game {
                 this.state = 'PLAYING';
                 this.lastDropTime = time;
             } else {
-                this.countdownValue = 3 - Math.floor(elapsed/1000);
+                this.countdownValue = 3 - Math.floor(elapsed / 1000);
             }
+
             return;
         }
 
-        if (this.state !== 'PLAYING' || this.currentPiece) return;
+        if (this.state !== 'PLAYING' || !this.currentPiece) return;
 
         if (time - this.lastDropTime >= this.dropInterval) {
             this.moveDown();
@@ -112,36 +114,46 @@ class Game {
     }
 
     moveLeft() {
-        if (this.state !== 'PLAYING') return;
-        if (!this.board.isCollision(this.currentPiece, this.currentPiece.x - 1, this.currentPiece.y)) {
-            this.currentPiece.x--;
+        if (!this.isPlaying()) return;
+
+        const nextX = this.currentPiece.x - 1;
+        if (!this.board.isCollision(this.currentPiece, nextX, this.currentPiece.y)) {
+            this.currentPiece.x = nextX;
         }
     }
 
     moveRight() {
-        if (this.state !== 'PLAYING') return;
-        if (this.board.isCollision(this.currentPiece, this.currentPiece.x + 1, this.currentPiece.y)) {
-            this.currentPiece.x++;
+        if (!this.isPlaying()) return;
+
+        const nextX = this.currentPiece.x + 1;
+        if (!this.board.isCollision(this.currentPiece, nextX, this.currentPiece.y)) {
+            this.currentPiece.x = nextX;
         }
     }
 
     moveDown() {
-        if (this.state !== 'PLAYING') return;
-        if (this.board.isCollision(this.currentPiece, this.currentPiece.x, this.currentPiece.y + 1)) {
-            this.currentPiece.y++;
-        } else {
-            this.lock();
+        if (!this.isPlaying()) return;
+
+        const nextY = this.currentPiece.y + 1;
+
+        if (!this.board.isCollision(this.currentPiece, this.currentPiece.x, nextY)) {
+            this.currentPiece.y = nextY;
+            return true;
         }
+
+        this.lock();
+        return false;
     }
 
     hardDrop() {
-        if (this.state !== 'PLAYING') return;
+        if (!this.isPlaying()) return;
+
         this.currentPiece.y = this.getGhostY();
         this.lock();
     }
 
     rotate() {
-        if (this.state !== 'PLAYING') return;
+        if (!this.isPlaying()) return;
 
         const rotated = rotateMatrix(this.currentPiece.shape);
         const offsets = [0, -1, 1, -2, 2];
@@ -150,7 +162,10 @@ class Game {
             const nextX = this.currentPiece.x + offset;
 
             if (!this.board.isCollision(
-                this.currentPiece, nextX, this.currentPiece.y, rotated
+                this.currentPiece,
+                nextX,
+                this.currentPiece.y,
+                rotated
             )) {
                 this.currentPiece.shape = rotated;
                 this.currentPiece.x = nextX;
@@ -160,7 +175,7 @@ class Game {
     }
 
     hold() {
-        if (this.state !== 'PLAYING' || this.canHold) return;
+        if (!this.isPlaying() || !this.canHold) return;
 
         const currentType = this.currentPiece.type;
 
@@ -194,7 +209,9 @@ class Game {
         this.currentPiece.y = 0;
 
         if (this.board.isCollision(
-            this.currentPiece, this.currentPiece.x, this.currentPiece.y
+            this.currentPiece,
+            this.currentPiece.x,
+            this.currentPiece.y
         )) {
             this.state = 'GAME_OVER';
         }
@@ -250,19 +267,29 @@ class Game {
     handleLinesCleared(lineCount) {
         this.lines += lineCount;
 
-        let points = 0;
-        if (lineCount === 1) points = 100;
-        if (lineCount === 2) points = 300;
-        if (lineCount === 3) points = 500;
-        if (lineCount === 4) points = 800;
+        const points = {
+            1: 100,
+            2: 300,
+            3: 500,
+            4: 800
+        };
+
         this.score += points[lineCount] || 0;
     }
 
     getGhostY() {
-        let ghostY = this.currentPiece;
-        while (!this.board.isCollision(this.currentPiece, this.currentPiece.x - 1, this.currentPiece.y + 1)) {
+        if (!this.currentPiece) return 0;
+
+        let ghostY = this.currentPiece.y;
+
+        while (!this.board.isCollision(
+            this.currentPiece,
+            this.currentPiece.x,
+            ghostY + 1
+        )) {
             ghostY++;
         }
+
         return ghostY;
     }
 
