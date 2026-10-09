@@ -11,9 +11,18 @@ class Game {
         this.score = 0;
         this.lines = 0;
 
+        // Level1
         this.piecesSinceGarbage = 0;
         this.garbageRowsCreated = 0;
         this.garbageRowsCleared = 0;
+
+        //Level2
+        this.piecesSinceBomb = 0;
+        this.bombPosition = null;
+        this.bombActive = false;
+        this.bombsCreated = 0;
+        this.bombsUsed = 0;
+        this.lastBombBlocksRemoved = 0;
 
         this.state = 'START';
 
@@ -25,7 +34,9 @@ class Game {
     }
 
     setLevel(level) {
-        this.level = Number(level) === 1 ? 1 : 0;
+        const selectedLevel = Number(level);
+
+        this.level = [0, 1, 2].includes(selectedLevel) ? selectedLevel : 0;
         this.resetToStart();
     }
 
@@ -44,10 +55,21 @@ class Game {
         this.garbageRowsCreated = 0;
         this.garbageRowsCleared = 0;
 
+        this.resetBombProgress();
+
         this.state = 'START';
         this.lastDropTime = 0;
         this.countdownStartTime = 0;
         this.countdownValue = 0;
+    }
+
+    resetBombProgress() {
+        this.piecesSinceBomb = 0;
+        this.bombPosition = null;
+        this.bombActive = false;
+        this.bombsCreated = 0;
+        this.bombsUsed = 0;
+        this.lastBombBlocksRemoved = 0;
     }
 
     start() {
@@ -65,9 +87,12 @@ class Game {
         this.garbageRowsCreated = 0;
         this.garbageRowsCleared = 0;
 
+        this.resetBombProgress();
+
         // Bắt đầu bằng countdown 3 -> 2 -> 1.
         this.state = 'COUNTDOWN';
-        this.countdownStartTime = performance.now();
+        // Đặt mốc 0, hệ thống sẽ tự lấy timestamp chuẩn trong frame tiếp theo của hàm update()
+        this.countdownStartTime = 0;
         this.countdownValue = 3;
         this.lastDropTime = 0;
 
@@ -86,12 +111,17 @@ class Game {
 
         if (this.state === 'PAUSED') {
             this.state = 'PLAYING';
-            this.lastDropTime = performance.now();
+            this.lastDropTime = 0; // Trigger reset time chuẩn trong update() thay vì dùng performance.now()
         }
     }
 
     update(time) {
         if (this.state === 'COUNTDOWN') {
+            // Khởi tạo thời gian bắt đầu đếm ngược dựa trên timestamp thực tế của loop
+            if (this.countdownStartTime === 0) {
+                this.countdownStartTime = time;
+            }
+
             const elapsed = time - this.countdownStartTime;
 
             if (elapsed >= 3000) {
@@ -106,6 +136,11 @@ class Game {
         }
 
         if (this.state !== 'PLAYING' || !this.currentPiece) return;
+
+        // Khởi tạo lại lastDropTime nếu game vừa Resume từ Pause
+        if (this.lastDropTime === 0) {
+            this.lastDropTime = time;
+        }
 
         if (time - this.lastDropTime >= this.dropInterval) {
             this.moveDown();
@@ -187,6 +222,9 @@ class Game {
             this.holdPiece = currentType;
             this.currentPiece = createPiece(heldType);
 
+            this.currentPiece.x = Math.floor((this.board.width - this.currentPiece.shape[0].length)/2);
+            this.currentPiece.y = 0;
+
             if (this.board.isCollision(
                 this.currentPiece,
                 this.currentPiece.x,
@@ -253,6 +291,14 @@ class Game {
 
         this.canHold = true;
         this.spawnNextPiece();
+
+        if (this.level === 2 && this.state !== 'GAME_OVER') {
+            this.piecesSinceBomb++;
+            if (this.piecesSinceBomb >= 5) {
+                this.piecesSinceBomb = 0;
+                if (!this.bombActive) this.createBomb();
+            }
+        }
     }
 
     addGarbageRow() {
@@ -262,6 +308,102 @@ class Game {
         if (gameOver) {
             this.state = 'GAME_OVER';
         }
+    }
+
+    createBomb() {
+        if (this.bombActive || this.level !== 2) return false;
+
+        const candidates = [];
+        let bestScore = -1;
+
+        for (let y = 0; y < this.board.height; y++) {
+            for (let x = 0; x < this.board.width; x++) {
+                if (this.isCurrentPieceCell(x, y)) continue;
+
+                let score = 0;
+                for (let dy = -1; dy <= 1; dy++) {
+                    for (let dx = -1; dx <= 1; dx++) {
+                        const bx = x + dx;
+                        const by = y + dy;
+                        if (
+                            bx >= 0 && bx < this.board.width &&
+                            by >= 0 && by < this.board.height &&
+                            this.board.cells[by][bx] !== 0
+                        ) {
+                            score++;
+                        }
+                    }
+                }
+
+                score += y * 0.01;
+                if (score > bestScore) {
+                    bestScore = score;
+                    candidates.length = 0;
+                    candidates.push({ x, y });
+                } else if (score === bestScore) {
+                    candidates.push({ x, y });
+                }
+            }
+        }
+
+        if (candidates.length === 0) return false;
+        this.bombPosition = candidates[Math.floor(Math.random() * candidates.length)];
+        this.bombActive = true;
+        this.bombsCreated++;
+        return true;
+    }
+
+    isCurrentPieceCell(x, y) {
+        if (!this.currentPiece) return false;
+        for (let row = 0; row < this.currentPiece.shape.length; row++) {
+            for (let col = 0; col < this.currentPiece.shape[row].length; col++) {
+                if (!this.currentPiece.shape[row][col]) continue;
+                if (
+                    this.currentPiece.x + col === x &&
+                    this.currentPiece.y + row === y
+                ) return true;
+            }
+        }
+        return false;
+    }
+
+    //Kích nổ bảng phím B hoặc nút trên giao diện
+    detonateBomb() {
+        if (
+            !this.isPlaying() || this.level !== 2 ||
+            !this.bombActive || !this.bombPosition
+        ) return false;
+
+        const { x, y } = this.bombPosition;
+        let removedBlocks = 0;
+
+        for (let row = Math.max(0, y - 1); row <= Math.min(this.board.height - 1, y + 1); row++) {
+            for (let col = Math.max(0, x - 1); col <= Math.min(this.board.width - 1, x + 1); col++) {
+                if (this.board.cells[row][col] !== 0) {
+                    this.board.cells[row][col] = 0;
+                    removedBlocks++;
+                }
+            }
+        }
+
+        this.bombActive = false;
+        this.bombPosition = null;
+        this.bombsUsed++;
+
+        const result = this.board.clearLines();
+        if (result.linesCleared > 0) {
+            this.handleLinesCleared(result.linesCleared);
+        }
+        if (result.garbageRowsCleared > 0) {
+            this.garbageRowsCleared += result.garbageRowsCleared;
+        }
+
+        this.lastBombBlocksRemoved = removedBlocks;
+        if (this.bombsUsed >= 3) {
+            this.state = 'LEVEL_COMPLETE';
+            this.currentPiece = null;
+        }
+        return true;
     }
 
     handleLinesCleared(lineCount) {
@@ -342,6 +484,11 @@ class Game {
             }
         }
 
+        // Bomb và phạm vi tác động 3x3.
+        if (this.level === 2 && this.bombActive && this.bombPosition) {
+            this.drawBomb(ctx, this.bombPosition.x, this.bombPosition.y, cellSize);
+        }
+
         if (this.currentPiece) {
             // Ghost
             const ghostY = this.getGhostY();
@@ -406,12 +553,57 @@ class Game {
                 'Nhấn Restart hoặc R để chơi lại'
             );
         } else if (this.state === 'LEVEL_COMPLETE') {
-            this.drawOverlay(
-                ctx,
-                'LEVEL 1 HOÀN THÀNH',
-                'Bạn đã xóa đủ 3 Garbage Row'
-            );
+            const subtitle = this.level === 1
+                ? 'Bạn đã xóa đủ 3 Garbage Row'
+                : 'Bạn đã kích nổ đủ 3 Bomb';
+            this.drawOverlay(ctx, `LEVEL ${this.level} HOÀN THÀNH`, subtitle);
         }
+    }
+
+    drawBomb(ctx, x, y, cellSize) {
+        // Vùng ảnh hưởng được giới hạn ở Board; vùng ngoài Board không được vẽ.
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.12)';
+        ctx.strokeStyle = 'rgba(248, 113, 113, 0.6)';
+        ctx.lineWidth = 2;
+        const left = Math.max(0, x - 1);
+        const top = Math.max(0, y - 1);
+        const right = Math.min(this.board.width - 1, x + 1);
+        const bottom = Math.min(this.board.height - 1, y + 1);
+        ctx.fillRect(
+            left * cellSize + 2,
+            top * cellSize + 2,
+            (right - left + 1) * cellSize - 4,
+            (bottom - top + 1) * cellSize - 4
+        );
+        ctx.strokeRect(
+            left * cellSize + 3,
+            top * cellSize + 3,
+            (right - left + 1) * cellSize - 6,
+            (bottom - top + 1) * cellSize - 6
+        );
+
+        const centerX = (x + 0.5) * cellSize;
+        const centerY = (y + 0.5) * cellSize;
+        ctx.beginPath();
+        ctx.fillStyle = '#ef4444';
+        ctx.arc(centerX, centerY + 2, 11, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#fecaca';
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(centerX + 3, centerY - 8);
+        ctx.lineTo(centerX + 8, centerY - 14);
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 13px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('B', centerX, centerY + 2);
     }
 
     drawOverlay(ctx, title, subtitle) {

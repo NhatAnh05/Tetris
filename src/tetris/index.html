@@ -20,6 +20,7 @@
                 <select id="levelSelect">
                     <option value="0">Level 0 - Core</option>
                     <option value="1">Level 1 - Garbage Row</option>
+                    <option value="2">Level 2 - Bomb Block</option>
                 </select>
 
                 <p id="levelDescription" class="level-description">
@@ -69,6 +70,7 @@
                 <button id="startBtn" type="button">Start</button>
                 <button id="pauseBtn" type="button">Pause</button>
                 <button id="restartBtn" type="button">Restart</button>
+                <button id="bombBtn" class="bomb-button" type="button" hidden>Kích nổ Bomb (B)</button>
             </section>
 
             <section class="controls">
@@ -80,8 +82,16 @@
                     <div><b>Space</b><span>Thả xuống</span></div>
                     <div><b>C</b><span>Hold</span></div>
                     <div><b>P</b><span>Pause</span></div>
+                    <div><b>B</b><span>Kích nổ Bomb</span></div>
                     <div><b>R</b><span>Restart</span></div>
                 </div>
+            </section>
+
+            <section class="rule-box">
+                <div class="section-title" id="ruleTitle">Level 0 - Core</div>
+                <p id="ruleText">Tetris cơ bản. Hoàn thành các dòng và cố gắng đạt điểm cao.</p>
+                <p class="rule-highlight" id="ruleGoal">Mục tiêu: chơi tự do.</p>
+                <p id="ruleProgress" class="rule-progress">Bắt đầu bằng cách nhấn Start.</p>
             </section>
 
         </aside>
