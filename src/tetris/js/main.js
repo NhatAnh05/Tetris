@@ -26,13 +26,15 @@ const bombButton = document.getElementById('bombBtn');
 const LEVEL_DESCRIPTIONS = {
     0: 'Tetris cơ bản với Board, Tetromino, di chuyển, xoay, Collision, Lock, Line Clear và tính điểm.',
     1: 'Sau mỗi 4 Tetromino được Lock, thêm 1 Garbage Row ở phía dưới. Mục tiêu là xóa 3 Garbage Row.',
-    2: 'Sau mỗi 5 Tetromino được Lock, Bomb xuất hiện nếu chưa có Bomb đang hoạt động. Nhấn B hoặc nút Kích nổ để xóa block trong vùng 3×3.'
+    2: 'Sau mỗi 5 Tetromino được Lock, Bomb xuất hiện nếu chưa có Bomb đang hoạt động. Nhấn B hoặc nút Kích nổ để xóa block trong vùng 3×3.',
+    3: 'Level 3 - Blocked Column: giai đoạn nền, chuẩn bị trạng thái và cấu trúc cho cơ chế cột bị khóa.'
 };
 
 const LEVEL_GOALS = {
     0: 'Mục tiêu: chơi tự do.',
     1: 'Mục tiêu: xóa 3 Garbage Row.',
-    2: 'Mục tiêu: kích nổ thành công 3 Bomb.'
+    2: 'Mục tiêu: kích nổ thành công 3 Bomb.',
+    3: 'Mục tiêu dự kiến: vượt qua 3 lần khóa cột (cơ chế chưa triển khai).'
 };
 
 const LEVEL_RULES = {
@@ -50,6 +52,11 @@ const LEVEL_RULES = {
         title: 'Level 2 - Bomb Block',
         text: 'Sau mỗi 5 quân Lock, Bomb xuất hiện nếu chưa có Bomb khác. Nhấn B/Kích nổ để xóa block trong vùng 3×3 quanh Bomb. Bomb không xóa Tetromino đang rơi.',
         goal: 'Mục tiêu: kích nổ thành công 3 Bomb.'
+    },
+    3: {
+        title: 'Level 3 - Blocked Column',
+        text: 'Giai đoạn nền: đã khai báo trạng thái và điểm reset cho cơ chế cột bị khóa. Logic tạo cột, va chạm và thời hạn cột sẽ được triển khai ở giai đoạn tiếp theo.',
+        goal: 'Mục tiêu dự kiến: vượt qua 3 lần khóa cột.'
     }
 };
 
@@ -124,6 +131,8 @@ function updateMessage() {
                     ? `Bomb tại cột ${game.bombPosition.x + 1}, hàng ${game.bombPosition.y + 1} — nhấn B để kích nổ`
                     : `Bomb đã dùng: ${game.bombsUsed}/3 · ${game.piecesSinceBomb}/5 quân đến lượt Bomb`;
                 messageElement.textContent = bombText;
+            } else if (game.level === 3) {
+                messageElement.textContent = 'Level 3 - Giai đoạn nền đang được phát triển';
             } else {
                 messageElement.textContent = 'Đang chơi Level 0';
             }
@@ -138,9 +147,13 @@ function updateMessage() {
             messageElement.className = 'message message-over';
             break;
         case 'LEVEL_COMPLETE':
-            messageElement.textContent = game.level === 1
-                ? 'LEVEL 1 HOÀN THÀNH - Đã xóa 3 Garbage Row'
-                : `LEVEL ${game.level} HOÀN THÀNH - Đã kích nổ 3 Bomb`;
+            if (game.level === 1) {
+                messageElement.textContent = 'LEVEL 1 HOÀN THÀNH - Đã xóa 3 Garbage Row';
+            } else if (game.level === 2) {
+                messageElement.textContent = 'LEVEL 2 HOÀN THÀNH - Đã kích nổ 3 Bomb';
+            } else {
+                messageElement.textContent = `LEVEL ${game.level} HOÀN THÀNH`;
+            }
             messageElement.className = 'message message-complete';
             break;
     }
@@ -165,6 +178,8 @@ function updateRuleProgress() {
             ? `Bomb đang hoạt động tại (${game.bombPosition.x + 1}, ${game.bombPosition.y + 1}).`
             : `Tiến độ tạo Bomb: ${game.piecesSinceBomb}/5 lần Lock.`;
         ruleProgressElement.textContent = `Đã kích nổ: ${game.bombsUsed}/3 · Đã tạo: ${game.bombsCreated}. ${activeText}`;
+    } else if (game.level === 3) {
+        ruleProgressElement.textContent = `Trạng thái nền đã khởi tạo · Đợt khóa cột: ${game.blockedCount}/3 (cơ chế chưa triển khai).`;
     } else {
         ruleProgressElement.textContent = 'Bắt đầu bằng cách nhấn Start.';
     }

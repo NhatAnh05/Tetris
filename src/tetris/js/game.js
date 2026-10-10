@@ -24,6 +24,12 @@ class Game {
         this.bombsUsed = 0;
         this.lastBombBlocksRemoved = 0;
 
+        //Level 3
+        this.piecesSinceBlocked = 0;
+        this.blockedColumn = null;
+        this.blockedTurns = 0;
+        this.blockedCount = 0;
+
         this.state = 'START';
 
         this.dropInterval = 850;
@@ -36,7 +42,7 @@ class Game {
     setLevel(level) {
         const selectedLevel = Number(level);
 
-        this.level = [0, 1, 2].includes(selectedLevel) ? selectedLevel : 0;
+        this.level = [0, 1, 2, 3].includes(selectedLevel) ? selectedLevel : 0;
         this.resetToStart();
     }
 
@@ -56,6 +62,7 @@ class Game {
         this.garbageRowsCleared = 0;
 
         this.resetBombProgress();
+        this.resetBlockedColumnProgress();
 
         this.state = 'START';
         this.lastDropTime = 0;
@@ -70,6 +77,13 @@ class Game {
         this.bombsCreated = 0;
         this.bombsUsed = 0;
         this.lastBombBlocksRemoved = 0;
+    }
+
+    resetBlockedColumnProgress() {
+        this.piecesSinceBlocked = 0;
+        this.blockedColumn = null;
+        this.blockedTurns = 0;
+        this.blockedCount = 0;
     }
 
     start() {
