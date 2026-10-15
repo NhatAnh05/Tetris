@@ -36,7 +36,8 @@ const COLORS = {
     Z: '#ef4444',
     J: '#3b82f6',
     L: '#f97316',
-    G: '#64748b'
+    G: '#64748b',
+    X: '#f43f5e'
 };
 
 function getRandomType() {
