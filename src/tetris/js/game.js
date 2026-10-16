@@ -10,10 +10,12 @@ class Game {
         this.score = 0;
         this.lines = 0;
 
+        //Level 1
         this.piecesSinceGarbage = 0;
         this.garbageRowsCreated = 0;
         this.garbageRowsCleared = 0;
 
+        //Level 2
         this.piecesSinceBomb = 0;
         this.bombPosition = null;
         this.bombActive = false;
@@ -23,10 +25,21 @@ class Game {
         this.bombFuseDuration = 4200;
         this.bombFuseRemaining = 0;
 
+        //Level 3
         this.piecesSinceBlocked = 0;
         this.blockedColumn = null;
         this.blockedTurns = 0;
         this.blockedCount = 0;
+
+        //Level 4
+        this.piecesSinceWind = 0;
+        this.windActive = false;
+        this.windRemaining = 0;
+        this.windPushRemaining = 0;
+        this.windDuration = 5000;
+        this.windPushInterval = 800;
+        this.windDirection = 1;
+        this.targetWindLines = 8;
 
         this.state = 'START';
         this.baseDropInterval = 850;
@@ -39,7 +52,7 @@ class Game {
 
     setLevel(level) {
         const selectedLevel = Number(level);
-        this.level = [0, 1, 2, 3].includes(selectedLevel) ? selectedLevel : 0;
+        this.level = [0, 1, 2, 3, 4].includes(selectedLevel) ? selectedLevel : 0;
         this.resetToStart();
     }
 
@@ -56,6 +69,7 @@ class Game {
         this.garbageRowsCleared = 0;
         this.resetBombProgress();
         this.resetBlockedColumnProgress();
+        this.resetWindProgres();
         this.state = 'START';
         this.dropInterval = this.baseDropInterval;
         this.lastDropTime = 0;
@@ -81,6 +95,14 @@ class Game {
         this.blockedCount = 0;
     }
 
+    resetWindProgres() {
+        this.piecesSinceWind = 0;
+        this.windActive = false;
+        this.windRemaining = 0;
+        this.windPushRemaining = 0;
+        this.windDirection = 1;
+    }
+
     start() {
         this.board.reset();
         this.currentPiece = null;
@@ -94,6 +116,7 @@ class Game {
         this.garbageRowsCleared = 0;
         this.resetBombProgress();
         this.resetBlockedColumnProgress();
+        this.resetWindProgres();
         this.dropInterval = this.baseDropInterval;
         this.state = 'COUNTDOWN';
         this.countdownStartTime = 0;
@@ -171,6 +194,34 @@ class Game {
             this.moveDown();
             this.lastDropTime = time;
         }
+    }
+
+    updateWind(time, deltaTime) {
+        //Nếu gió không hoạt động thì không cập nhật thời gian gió
+        //Giảm thời gian còn lại của gió
+        //Giảm thời gian chờ đên lần tiếp theo
+        // Khí dến điểm đẩy, gọi ApplyWindPush()
+        //Khi hết 5s gọi endWind()
+    }
+
+    startWind() {
+        //Kích hoạt trạng thái gió
+        // Đặt thời gian gió hoạt động là 5000ms
+        // Đặt thời gian chờ lần đẩy đầu tiên là 800ms
+        //Chọn hướng gió ngẫu nhiên: trái hoặc phải
+    }
+
+    applyWindPush() {
+        //Xác định vị trí mới của Tetromino theo hướng gió
+        // Kiểm tra va chạm với thành bảng, các khối đã khóa và cột bị chặn nếu có
+        // Chí di chuyển Tetrominp khi vị trí hợp lệ
+        //Đặt lại bộ đếm để lần đẩy tiếp theo diện ra sau 800ms.
+    }
+
+    endWind() {
+        //Tắt trạng thái gió
+        //Đăt thời gian gió còn lại về 0/
+        //Đặt lại bộ đếm thời gian đẩy
     }
 
     isCollision(piece, x, y, shape = piece.shape) {
@@ -597,6 +648,13 @@ class Game {
         };
 
         this.score += points[lineCount] || 0;
+    }
+
+    checkWindLevelComplete() {
+        //Chỉ xử lý khi người chơi đang ở level 4
+        // Kiểm tra tổng số dòng đã cóa có đạt ít nhất 8 dòng hay chưa
+        // nếu đạt mục tiêu, chuyển trạng thái game sang level_complete
+        // Dừng Tetrimino hiênj tại để tiếp tục chơi sau khi thắng.
     }
 
     getGhostY() {
