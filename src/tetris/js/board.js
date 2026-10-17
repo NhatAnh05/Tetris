@@ -54,10 +54,6 @@ class Board {
         }
     }
 
-    /**
-     * Clear các line đầy.
-     * Trả về cả số line bình thường và số Garbage Row bị xóa.
-     */
     clearLines() {
         let linesCleared = 0;
         let garbageRowsCleared = 0;
@@ -84,11 +80,6 @@ class Board {
         };
     }
 
-    /**
-     * Thêm Garbage Row ở dưới cùng.
-     * Các hàng hiện tại được đẩy lên.
-     * Garbage luôn có ít nhất một ô trống.
-     */
     addGarbageRow() {
         const topWasOccupied = this.cells[0].some(cell => cell !== 0);
 

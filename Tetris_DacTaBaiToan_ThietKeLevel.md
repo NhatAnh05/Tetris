@@ -1,301 +1,311 @@
-# ĐẶC TẢ BÀI TOÁN VÀ THIẾT KẾ LEVEL – TETRIS WEB GAME
+# ĐẶC TẢ TRÒ CHƠI TETRIS WEB
 
 ## 1. Thông tin dự án
 
-**Tên đề tài:** Xây dựng trò chơi Tetris trên nền tảng Web
-**Nền tảng:** Trình duyệt Web
-**Công nghệ:** HTML5, SCSS/CSS, JavaScript, Canvas, Git/GitHub, IntelliJ IDEA.
+- **Tên dự án:** Tetris Web Game
+- **Nền tảng:** Trình duyệt web
+- **Công nghệ:** HTML5, CSS/SCSS, JavaScript và Canvas
+- **Môi trường phát triển:** IntelliJ IDEA
+- **Quản lý mã nguồn:** Git và GitHub
 
-## 2. Phát biểu bài toán
+## 2. Mục tiêu trò chơi
 
-Xây dựng trò chơi Tetris trên trình duyệt. Người chơi điều khiển các Tetromino rơi xuống Board, thực hiện di chuyển, xoay và xóa các hàng đã được lấp đầy.
+Xây dựng trò chơi Tetris chạy trên trình duyệt. Người chơi điều khiển các khối Tetromino rơi từ trên xuống, sắp xếp chúng để lấp kín hàng ngang. Mỗi hàng được lấp đầy sẽ bị xóa và người chơi nhận điểm.
 
-Trò chơi kết thúc khi Tetromino mới không thể xuất hiện tại vị trí Spawn.
+Ngoài chế độ Tetris cơ bản, trò chơi có các Level với luật chơi riêng. Các Level bổ sung thử thách bằng cách thay đổi Board, hạn chế vị trí di chuyển hoặc tác động đến Tetromino đang được điều khiển.
 
-Sau khi hoàn thiện Core Game, hệ thống được mở rộng bằng các Level. Mỗi Level phải bổ sung một cơ chế gameplay mới hoặc thay đổi luật xử lý của Core**, từ đó yêu cầu người chơi thay đổi cách chơi.
+## 3. Thành phần chính
 
+| Thành phần | Chức năng |
+|---|---|
+| Board | Lưới chơi gồm 10 cột và 20 hàng, lưu trạng thái các ô đã chiếm. |
+| Tetromino | Bảy dạng khối tiêu chuẩn: I, O, T, S, Z, J và L. |
+| Movement | Di chuyển khối sang trái, sang phải và xuống dưới. |
+| Rotation | Xoay khối nếu vị trí sau khi xoay hợp lệ. |
+| Collision | Kiểm tra va chạm với biên Board, các khối đã khóa và chướng ngại vật của Level. |
+| Lock | Cố định khối vào Board khi không thể rơi xuống thêm. |
+| Line Clear | Xóa những hàng đã được lấp đầy. |
+| Score và Lines | Theo dõi điểm và tổng số hàng đã xóa. |
+| Next Piece | Hiển thị khối sắp xuất hiện. |
+| Hold Piece | Lưu khối hiện tại để đổi với khối khác. |
+| Ghost Piece | Hiển thị vị trí dự kiến khối sẽ chạm nếu rơi thẳng xuống. |
+| Level System | Theo dõi luật chơi, tiến trình và điều kiện hoàn thành Level. |
+| Canvas Renderer | Vẽ Board, Tetromino, Ghost Piece và các lớp thông báo. |
 
-# 3. Core Game
+## 4. Luật chơi cơ bản
 
-## 3.1. Thành phần chính
+### 4.1. Vòng đời của một khối
 
-| Thành phần | Mô tả                             |
-| ---------- | --------------------------------- |
-| Board      | Lưới chơi 10 × 20                 |
-| Tetromino  | 7 loại I, O, T, S, Z, J, L        |
-| Movement   | Di chuyển trái, phải, rơi xuống   |
-| Rotation   | Xoay Tetromino                    |
-| Collision  | Kiểm tra biên và block đã khóa    |
-| Lock       | Khóa Tetromino vào Board          |
-| Line Clear | Xóa hàng đầy                      |
-| Score      | Tính điểm theo số hàng bị xóa     |
-| Lines      | Theo dõi số hàng đã xóa           |
-| Game State | Start, Playing, Paused, Game Over |
-| Render     | Hiển thị bằng Canvas              |
+1. Hệ thống tạo khối mới tại vị trí xuất hiện.
+2. Người chơi di chuyển hoặc xoay khối.
+3. Khối tự động rơi theo thời gian; người chơi cũng có thể yêu cầu rơi nhanh hoặc thả khối xuống.
+4. Khi khối không thể rơi tiếp, khối được khóa vào Board.
+5. Hệ thống kiểm tra và xóa các hàng đã đầy.
+6. Điểm và tổng số hàng được cập nhật.
+7. Khối tiếp theo xuất hiện và vòng chơi tiếp tục.
 
-## 3.2. Chức năng hỗ trợ
+Khối chỉ được di chuyển hoặc xoay khi vị trí mới hợp lệ. Trò chơi chuyển sang **GAME OVER** nếu khối tiếp theo không thể xuất hiện tại vị trí bắt đầu.
 
-### Next Piece
+### 4.2. Tính điểm
 
-Hiển thị Tetromino tiếp theo để người chơi chuẩn bị nước đi.
+| Số hàng được xóa trong một lần | Điểm nhận được |
+|---:|---:|
+| 1 | 100 |
+| 2 | 300 |
+| 3 | 500 |
+| 4 | 800 |
 
-### Hold Piece
+Bảng điểm được cập nhật sau mỗi lần xóa hàng. Bộ đếm Lines thể hiện tổng số hàng đã xóa trong ván hiện tại.
 
-Cho phép lưu và đổi Tetromino. Mỗi lượt chỉ được Hold một lần.
+### 4.3. Chức năng hỗ trợ
 
-### Ghost Piece
+- **Next Piece:** Cho biết khối tiếp theo để người chơi chuẩn bị.
+- **Hold Piece:** Cho phép cất khối hiện tại và đổi lại sau đó. Mỗi khối chỉ được Hold một lần trước khi khóa.
+- **Ghost Piece:** Hiển thị vị trí mà khối hiện tại sẽ chạm nếu rơi thẳng xuống.
 
-Hiển thị vị trí mà Tetromino sẽ rơi xuống nếu thả thẳng.
+Next, Hold và Ghost là chức năng của Core Game, không phải Level độc lập.
 
-**Next, Hold và Ghost là tính năng hỗ trợ, không được tính là Level.**
+## 5. Điều khiển
 
+| Phím | Chức năng |
+|---|---|
+| `←` | Di chuyển sang trái. |
+| `→` | Di chuyển sang phải. |
+| `↓` | Cho khối rơi nhanh hơn một bước. |
+| `↑` | Xoay khối. |
+| `Space` | Thả khối xuống vị trí thấp nhất hợp lệ. |
+| `C` | Hold hoặc đổi khối. |
+| `P` | Tạm dừng hoặc tiếp tục. |
+| `R` | Chơi lại. |
 
-# 4. Luật Core
+Các nút **Start**, **Pause** và **Restart** cũng được cung cấp trên giao diện.
 
-Mỗi lượt gồm:
+## 6. Trạng thái trò chơi
 
-```text
-Spawn Piece
-    ↓
-Move / Rotate
-    ↓
-Gravity
-    ↓
-Lock
-    ↓
-Line Clear
-    ↓
-Update Score / Lines
-    ↓
-Spawn Next Piece
-```
+| Trạng thái | Mô tả |
+|---|---|
+| `START` | Chờ người chơi bắt đầu. |
+| `COUNTDOWN` | Đếm ngược 3, 2, 1 trước khi chơi. |
+| `PLAYING` | Trò chơi đang diễn ra. |
+| `PAUSED` | Tạm dừng; khối và bộ đếm thời gian của cơ chế Level không tiếp tục cập nhật. |
+| `GAME_OVER` | Không thể tạo khối mới tại vị trí bắt đầu. |
+| `LEVEL_COMPLETE` | Người chơi đã hoàn thành mục tiêu của Level hiện tại. |
 
-Tetromino chỉ được di chuyển hoặc xoay khi vị trí mới hợp lệ.
+Khi bắt đầu hoặc chơi lại, Board, điểm, số hàng và tiến trình Level được đặt lại. Khi tạm dừng, các cơ chế theo thời gian như Bomb hoặc gió không được tiếp tục đếm.
 
-**Game Over** xảy ra khi Tetromino mới không thể Spawn.
+## 7. Bố cục giao diện
 
-## 4.1. Tính điểm
+Giao diện có ba khu vực:
 
-| Số dòng xóa | Điểm |
-| ----------: | ---: |
-|           1 |  100 |
-|           2 |  300 |
-|           3 |  500 |
-|           4 |  800 |
+- **Bên trái:** Bộ chọn Level, mô tả mục tiêu, Score, Lines, Hold Piece và thông báo trạng thái.
+- **Ở giữa:** Board chơi chính, được vẽ bằng Canvas.
+- **Bên phải:** Next Piece, các nút Start/Pause/Restart, hướng dẫn điều khiển và tiến trình của Level.
 
-# 5. Nguyên tắc thiết kế Level
+Khi đếm ngược, tạm dừng, thua hoặc hoàn thành Level, thông báo được hiển thị trên Board hoặc ở khu vực thông báo.
 
-Một Level phải tạo ra **thay đổi gameplay thực sự**, tác động đến ít nhất một trong các yếu tố:
+## 8. Nguyên tắc thiết kế Level
 
-* Board.
-* Cách đặt Tetromino.
-* Khả năng di chuyển hoặc xoay.
-* Cách xử lý tình huống.
-* Mục tiêu của người chơi.
+Mỗi Level cần có cơ chế riêng, điều kiện kích hoạt và cách xử lý rõ ràng. Cơ chế mới phải tác động đến Board, vị trí của Tetromino, cách di chuyển hoặc mục tiêu người chơi; chỉ thay đổi màu sắc hoặc điểm số không được xem là một Level mới.
 
-### Không được tính là Level
+Mỗi cơ chế Level cần được kiểm thử với các tình huống bình thường, gần biên Board, va chạm và khởi động lại.
 
-* Next Piece.
-* Hold Piece.
-* Ghost Piece.
-* Pause/Restart.
-* Chỉ tăng tốc độ rơi.
-* Chỉ đổi giao diện hoặc màu sắc.
-* Chỉ tăng điểm mà không thay đổi gameplay.
+## 9. Level 0 – Core Tetris
 
-### Mỗi Level cần có
+### Cách chơi
 
-1. Cơ chế mới.
-2. Điều kiện kích hoạt.
-3. Luật xử lý.
-4. Trạng thái cần quản lý.
-5. Hiển thị cho người chơi.
-6. Điều kiện hoàn thành.
-7. Test Case.
+Người chơi xếp các Tetromino để lấp đầy hàng ngang. Mỗi hàng đầy được xóa và hệ thống cộng điểm theo bảng tính điểm ở mục 4.1.
 
-Level phải có khả năng thắng thực tế, không làm game trở nên vô lý hoặc quá khó triển khai.
+### Điều kiện kết thúc
 
+- **Thắng theo mục tiêu:** Không có điều kiện thắng bắt buộc; người chơi cố gắng đạt điểm cao.
+- **Thua:** Khối mới không thể xuất hiện tại vị trí bắt đầu.
 
-# 6. Level 1 – Garbage Row
+### Kiểm thử
 
-## Mục tiêu
+- Bảy loại Tetromino có thể xuất hiện.
+- Di chuyển, xoay, rơi, thả nhanh và khóa khối hoạt động đúng.
+- Hàng đầy được xóa và các hàng phía trên được cập nhật.
+- Điểm được tính đúng khi xóa 1, 2, 3 hoặc 4 hàng.
+- Game Over xảy ra khi không còn vị trí xuất hiện khối mới.
 
-Bổ sung cơ chế Board tự thay đổi bằng cách tạo hàng rác.
+## 10. Level 1 – Garbage Row
 
-## Cơ chế
+### Mục tiêu
 
-Sau mỗi **4 Tetromino được Lock**, hệ thống thêm một Garbage Row ở phía dưới Board.
+Thử thách người chơi bằng các hàng rác được thêm vào Board trong quá trình chơi.
 
-```text
-■■■■■■■□■■
-```
+### Cơ chế và luật xử lý
 
-Garbage Row luôn có ít nhất **một ô trống**.
+- Sau mỗi **4 Tetromino được khóa**, hệ thống thêm một Garbage Row ở đáy Board.
+- Garbage Row có ít nhất một ô trống.
+- Khi thêm hàng, các hàng hiện có được đẩy lên.
+- Garbage Row được xử lý như các ô đã chiếm chỗ và có thể bị xóa khi hàng đầy.
+- Nếu thêm hàng làm vùng trên cùng bị chiếm dẫn đến không thể tiếp tục, trò chơi chuyển sang Game Over.
 
-## Luật
-
-* Các hàng hiện tại được đẩy lên.
-* Garbage Row được thêm vào phía dưới.
-* Garbage được xử lý như block bình thường.
-* Nếu hàng được lấp đầy, Line Clear vẫn hoạt động.
-
-## Điều kiện thắng
+### Điều kiện hoàn thành
 
 Xóa được **3 Garbage Row**.
 
-## Trạng thái
+### Trạng thái cần theo dõi
+
+`piecesSinceGarbage`, `garbageRowsCreated`, `garbageRowsCleared`.
+
+### Kiểm thử
+
+- Hàng rác xuất hiện sau mỗi 4 lần khóa khối.
+- Hàng rác luôn có ít nhất một ô trống.
+- Hàng rác có thể được xóa như hàng bình thường.
+- Chưa đủ 4 lần khóa thì không thêm hàng rác.
+- Xóa đủ 3 hàng rác thì Level hoàn thành.
+
+## 11. Level 2 – Bomb Attack
+
+### Mục tiêu
+
+Thêm một sự kiện tự phát nổ, làm thay đổi cấu trúc Board và tạo áp lực cho người chơi.
+
+### Cơ chế và luật xử lý
+
+- Sau mỗi **5 Tetromino được khóa**, hệ thống tạo Bomb nếu không có Bomb nào đang hoạt động.
+- Bomb được đặt tại một ô trong Board, ưu tiên các vị trí có nhiều khối xung quanh.
+- Bomb tự phát nổ sau khoảng **4,2 giây**; người chơi không cần nhấn nút kích nổ.
+- Khi nổ, Bomb xóa các khối đã khóa trong vùng **3 × 3** quanh vị trí Bomb.
+- Sau vụ nổ, những khối còn lại được dồn xuống theo từng cột để xử lý khoảng trống.
+- Board sau đó được thêm một Garbage Row ở đáy. Nếu hàng mới khiến vùng trên cùng bị chiếm hoặc khối hiện tại va chạm, trò chơi kết thúc.
+- Sau vụ nổ, hệ thống kiểm tra lại các hàng đầy và cập nhật điểm nếu có.
+
+### Mục tiêu chơi
+
+Chế độ hiện tại là **sinh tồn đến khi Game Over**. Số Bomb đã tạo và đã nổ được hiển thị để theo dõi tiến trình.
+
+### Trạng thái cần theo dõi
+
+`piecesSinceBomb`, `bombPosition`, `bombActive`, `bombFuseRemaining`, `bombsCreated`, `bombsUsed`.
+
+### Kiểm thử
+
+- Bomb chỉ xuất hiện khi đủ 5 lần khóa khối và không có Bomb đang hoạt động.
+- Bomb tự nổ khi hết thời gian chờ.
+- Vùng nổ không vượt ra ngoài Board.
+- Bomb hoạt động đúng khi nằm giữa, sát biên hoặc gần góc.
+- Khối đang được điều khiển không bị xóa trực tiếp bởi vụ nổ.
+- Các khối còn lại được dồn xuống và hàng rác được thêm sau vụ nổ.
+- Pause và Restart xử lý bộ đếm Bomb đúng.
+
+## 12. Level 3 – Blocked Column
+
+### Mục tiêu
+
+Buộc người chơi thay đổi cách di chuyển và đặt khối khi một cột bị hạn chế tạm thời.
+
+### Cơ chế và luật xử lý
+
+- Sau mỗi **6 Tetromino được khóa**, hệ thống chọn một cột trong nhóm cột gần hai bên Board để khóa.
+- Cột bị khóa tồn tại trong **3 lượt Tetromino tiếp theo**.
+- Tetromino không thể chiếm các ô trong cột đang bị khóa.
+- Lệnh di chuyển hoặc xoay tạo ra vị trí vi phạm sẽ bị từ chối.
+- Khi hết thời hạn, cột được mở lại và hệ thống tiếp tục đếm cho đợt tiếp theo.
+
+### Mục tiêu chơi
+
+Chế độ hiện tại là **sinh tồn đến khi Game Over**. Giao diện hiển thị cột bị khóa và số lượt còn lại.
+
+### Trạng thái cần theo dõi
+
+`piecesSinceBlocked`, `blockedColumn`, `blockedTurns`, `blockedCount`.
+
+### Kiểm thử
+
+- Cột được khóa sau 6 lần khóa khối.
+- Khối không thể di chuyển hoặc xoay vào cột bị khóa.
+- Cột được mở lại sau thời hạn quy định.
+- Cơ chế khóa cột không vô hiệu hóa các kiểm tra va chạm ở biên Board.
+- Restart xóa trạng thái cột bị khóa và đặt lại bộ đếm.
+
+## 13. Level 4 – Wind Gust
+
+### Mục tiêu
+
+Tạo một thử thách điều khiển khối bằng các đợt gió tự động đẩy Tetromino sang trái hoặc phải.
+
+### Cơ chế và luật xử lý
+
+- Sau mỗi **5 Tetromino được khóa**, hệ thống bắt đầu một đợt gió nếu hiện không có đợt gió nào hoạt động.
+- Mỗi đợt gió kéo dài **5 giây**.
+- Khi bắt đầu đợt gió, hệ thống chọn ngẫu nhiên hướng sang trái hoặc sang phải.
+- Trong thời gian gió, cứ mỗi **800 mili giây**, gió thử đẩy Tetromino hiện tại một ô theo hướng đã chọn.
+- Trước khi dịch chuyển, hệ thống kiểm tra va chạm với biên Board và các khối đã khóa. Nếu vị trí mới không hợp lệ, khối giữ nguyên vị trí.
+- Hết 5 giây, đợt gió kết thúc. Nếu đã đủ 5 lần khóa khối cho đợt kế tiếp trong lúc gió đang hoạt động, hệ thống sẽ bắt đầu đợt mới sau khi đợt hiện tại kết thúc.
+- Bộ đếm gió chỉ cập nhật khi trò chơi ở trạng thái `PLAYING`, vì vậy Pause sẽ tạm dừng hiệu ứng gió.
+
+### Điều kiện hoàn thành
+
+Xóa được ít nhất **8 hàng** trong Level 4. Khi đạt mục tiêu, trò chơi chuyển sang `LEVEL_COMPLETE` và dừng điều khiển khối hiện tại.
+
+### Trạng thái cần theo dõi
+
+`piecesSinceWind`, `windActive`, `windRemaining`, `windPushRemaining`, `windDuration`, `windPushInterval`, `windDirection`, `targetWindLines`.
+
+### Kiểm thử
+
+- Gió bắt đầu sau mỗi 5 lần khóa khối khi không có đợt gió đang chạy.
+- Hướng gió được chọn khi bắt đầu một đợt.
+- Đợt gió kéo dài 5 giây và đẩy khối theo chu kỳ 800 mili giây.
+- Nếu vị trí mới va chạm, khối không bị đẩy xuyên qua vật cản.
+- Không có hai đợt gió được kích hoạt đồng thời.
+- Khi Pause, thời gian gió không tiếp tục giảm.
+- Khi Restart, trạng thái gió và các bộ đếm được đặt lại.
+- Xóa đủ 8 hàng sẽ hoàn thành Level và không tiếp tục điều khiển khối.
+
+## 14. Xử lý lỗi và trường hợp biên
+
+- Không cho phép Tetromino đi ra ngoài biên Board.
+- Không cho phép các khối chồng lên ô đã bị chiếm.
+- Không cho phép di chuyển hoặc xoay nếu vị trí mới không hợp lệ.
+- Không cập nhật gameplay khi ở trạng thái `START`, `PAUSED`, `GAME_OVER` hoặc `LEVEL_COMPLETE`, ngoại trừ phần hiển thị.
+- Restart phải đặt lại Board, điểm, số hàng, khối đang giữ và mọi tiến trình Level.
+- Các cơ chế theo thời gian phải dừng khi tạm dừng và được khởi tạo lại khi bắt đầu ván mới.
+- Cơ chế Level phải tương thích với Collision, Lock, Line Clear và Game Over.
+
+## 15. Tiêu chí hoàn thành dự án
+
+- Core Game hoạt động với đủ bảy loại Tetromino.
+- Movement, Rotation, Gravity, Collision, Lock và Line Clear hoạt động đúng.
+- Score, Lines, Next Piece, Hold Piece và Ghost Piece hoạt động đúng.
+- Các trạng thái Start, Countdown, Playing, Paused, Game Over và Level Complete được xử lý đúng.
+- Giao diện có bộ chọn Level, Board, thông tin điểm và số dòng, khối Next/Hold và các nút điều khiển.
+- Level 1 thêm Garbage Row và có điều kiện hoàn thành.
+- Level 2 có Bomb tự phát nổ và xử lý thay đổi Board.
+- Level 3 có cột bị khóa tạm thời.
+- Level 4 có gió đẩy khối và điều kiện hoàn thành 8 dòng.
+- Restart đưa game và tiến trình của Level về trạng thái ban đầu.
+- Các test case quan trọng ở từng Level được kiểm tra trước khi nộp.
+
+## 16. Sơ đồ thành phần
 
 ```text
-piecesSinceGarbage
-garbageRowsCreated
-garbageRowsCleared
-```
-
-## Tác động gameplay
-
-Board không chỉ thay đổi do người chơi mà còn bị hệ thống bổ sung hàng rác, khiến không gian chơi dần bị thu hẹp.
-
-## Test Case
-
-* Sau 4 lượt Lock xuất hiện Garbage Row.
-* Garbage Row luôn có ô trống.
-* Garbage Row có thể được xóa.
-* Chưa đủ 4 lượt thì không tạo Garbage.
-* Xóa đủ 3 Garbage Row thì Level hoàn thành.
-
-
-# 7. Level 2 – Bomb Block
-
-## Mục tiêu
-
-Bổ sung một Bomb có khả năng xóa block trong khu vực giới hạn.
-
-## Cơ chế
-
-Sau mỗi **5 Tetromino được Lock**, hệ thống tạo một Bomb nếu chưa có Bomb đang hoạt động.
-
-Bomb tác động trong vùng **3 × 3**:
-
-```text
-□□□
-□B□
-□□□
-```
-
-## Luật
-
-Khi Bomb được kích hoạt:
-
-1. Xác định vị trí Bomb.
-2. Xóa các block trong vùng 3 × 3.
-3. Xóa Bomb.
-4. Kiểm tra lại Line Clear.
-5. Tiếp tục game.
-
-Bomb không tác động ra ngoài Board và không được xóa Tetromino đang điều khiển.
-
-## Điều kiện thắng
-
-Kích hoạt thành công **3 Bomb**.
-
-## Trạng thái
-
-```text
-bombPosition
-bombActive
-bombsCreated
-bombsUsed
-```
-
-## Tác động gameplay
-
-Người chơi phải cân nhắc cách tận dụng Bomb để xử lý khu vực Board thay vì chỉ đặt Tetromino theo cách thông thường.
-
-## Test Case
-
-* Bomb xuất hiện đúng điều kiện.
-* Bomb nằm trong Board.
-* Bomb chỉ tác động trong vùng 3 × 3.
-* Bomb ở giữa, biên và góc đều hoạt động đúng.
-* Line Clear vẫn hoạt động sau Bomb.
-* Dùng đủ 3 Bomb thì Level hoàn thành.
-
-# 8. Level 3 – Blocked Column
-
-## Mục tiêu
-
-Tạm thời hạn chế một khu vực của Board, buộc người chơi thay đổi vị trí đặt Tetromino.
-
-## Cơ chế
-
-Sau mỗi **6 Tetromino được Lock**, chọn một cột hợp lệ để khóa.
-
-```text
-[ ][ ][ ][X][ ][ ][ ][ ][ ][ ]
-[ ][ ][ ][X][ ][ ][ ][ ][ ][ ]
-[ ][ ][ ][X][ ][ ][ ][ ][ ][ ]
-```
-
-Cột bị khóa tồn tại trong **3 lượt Tetromino tiếp theo**.
-
-## Luật
-
-Trong thời gian khóa:
-
-* Tetromino không được chiếm cột bị khóa.
-* Di chuyển vào cột khóa bị từ chối.
-* Xoay tạo ra vị trí vi phạm cũng bị từ chối.
-* Sau 3 lượt, cột được mở lại.
-
-Cột khóa không được làm vô hiệu vùng Spawn.
-
-## Điều kiện thắng
-
-Vượt qua **3 lần Blocked Column** mà không Game Over.
-
-## Trạng thái
-
-```text
-blockedColumn
-blockedTurns
-blockedCount
-```
-
-## Tác động gameplay
-
-Người chơi không thể sử dụng toàn bộ chiều rộng Board trong một khoảng thời gian và phải điều chỉnh cách đặt Tetromino.
-
-## Test Case
-
-* Sau 6 lượt xuất hiện cột khóa.
-* Tetromino không thể đi vào cột khóa.
-* Xoay vào cột khóa bị từ chối.
-* Sau 3 lượt cột được mở.
-* Cột khóa không chặn toàn bộ vùng Spawn.
-* Vượt qua 3 lần thì Level hoàn thành.
-
-# 9. Kết luận
-
-Hệ thống được xây dựng theo cấu trúc:
-
-```text
-TETRIS
-│
-├── CORE GAME
-│   ├── Board
-│   ├── Tetromino
-│   ├── Collision
-│   ├── Lock
-│   ├── Line Clear
-│   └── Score
-│
-├── FEATURE HỖ TRỢ
-│   ├── Next
-│   ├── Hold
-│   └── Ghost
-│
-└── LEVEL SYSTEM
-    ├── Level 1: Garbage Row
-    ├── Level 2: Bomb Block
-    └── Level 3: Blocked Column
+TETRIS WEB GAME
+|
+|-- CORE GAME
+|   |-- Board 10 x 20
+|   |-- 7 loại Tetromino
+|   |-- Movement và Rotation
+|   |-- Collision và Lock
+|   |-- Gravity và Line Clear
+|   |-- Score và Lines
+|   |-- Next, Hold và Ghost
+|   `-- Game State
+|
+|-- USER INTERFACE
+|   |-- Bộ chọn Level và mục tiêu
+|   |-- Board Canvas
+|   |-- Score / Lines / Next / Hold
+|   |-- Nút Start / Pause / Restart
+|   `-- Thông báo trạng thái và tiến trình
+|
+`-- LEVEL SYSTEM
+    |-- Level 1: Garbage Row
+    |-- Level 2: Bomb Attack
+    |-- Level 3: Blocked Column
+    `-- Level 4: Wind Gust
 ```

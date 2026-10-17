@@ -69,7 +69,7 @@ class Game {
         this.garbageRowsCleared = 0;
         this.resetBombProgress();
         this.resetBlockedColumnProgress();
-        this.resetWindProgres();
+        this.resetWindProgress();
         this.state = 'START';
         this.dropInterval = this.baseDropInterval;
         this.lastDropTime = 0;
@@ -95,7 +95,7 @@ class Game {
         this.blockedCount = 0;
     }
 
-    resetWindProgres() {
+    resetWindProgress() {
         this.piecesSinceWind = 0;
         this.windActive = false;
         this.windRemaining = 0;
@@ -116,7 +116,7 @@ class Game {
         this.garbageRowsCleared = 0;
         this.resetBombProgress();
         this.resetBlockedColumnProgress();
-        this.resetWindProgres();
+        this.resetWindProgress();
         this.dropInterval = this.baseDropInterval;
         this.state = 'COUNTDOWN';
         this.countdownStartTime = 0;
@@ -186,6 +186,14 @@ class Game {
             }
         }
 
+        if (this.level === 4) {
+            this.updateWind(time, deltaTime);
+
+            if (this.state !== 'PLAYING' || !this.currentPiece) {
+                return;
+            }
+        }
+
         if (this.lastDropTime === 0) {
             this.lastDropTime = time;
         }
@@ -197,31 +205,61 @@ class Game {
     }
 
     updateWind(time, deltaTime) {
-        //Nếu gió không hoạt động thì không cập nhật thời gian gió
-        //Giảm thời gian còn lại của gió
-        //Giảm thời gian chờ đên lần tiếp theo
-        // Khí dến điểm đẩy, gọi ApplyWindPush()
-        //Khi hết 5s gọi endWind()
+        if (this.level !== 4 || !this.windActive) {
+            return;
+        }
+
+        this.windRemaining = Math.max(0, this.windRemaining - deltaTime);
+        this.windPushRemaining = Math.max(0, this.windPushRemaining - deltaTime);
+
+        if (this.windPushRemaining <= 0 && this.windRemaining > 0) {
+            this.applyWindPush();
+        }
+
+        if (this.windRemaining <= 0) {
+            this.endWind();
+        }
     }
 
     startWind() {
-        //Kích hoạt trạng thái gió
-        // Đặt thời gian gió hoạt động là 5000ms
-        // Đặt thời gian chờ lần đẩy đầu tiên là 800ms
-        //Chọn hướng gió ngẫu nhiên: trái hoặc phải
+        if (this.level !== 4 || this.windActive || !this.isPlaying()) {
+            return;
+        }
+
+        this.windActive = true;
+        this.windRemaining = this.windDuration;
+        this.windPushRemaining = this.windPushInterval;
+        this.windDirection = Math.random() < 0.5 ? -1 : 1;
     }
 
     applyWindPush() {
-        //Xác định vị trí mới của Tetromino theo hướng gió
-        // Kiểm tra va chạm với thành bảng, các khối đã khóa và cột bị chặn nếu có
-        // Chí di chuyển Tetrominp khi vị trí hợp lệ
-        //Đặt lại bộ đếm để lần đẩy tiếp theo diện ra sau 800ms.
+        if (!this.windActive || !this.currentPiece || !this.isPlaying()) {
+            return;
+        }
+
+        const nextX = this.currentPiece.x + this.windDirection;
+
+        if (!this.isCollision(this.currentPiece, nextX, this.currentPiece.y)) {
+            this.currentPiece.x = nextX;
+        }
+
+        this.windPushRemaining = this.windPushInterval;
     }
 
     endWind() {
-        //Tắt trạng thái gió
-        //Đăt thời gian gió còn lại về 0/
-        //Đặt lại bộ đếm thời gian đẩy
+        this.windActive = false;
+        this.windRemaining = 0;
+        this.windPushRemaining = 0;
+
+        if (
+            this.level === 4 &&
+            this.piecesSinceWind >= 5 &&
+            this.state === 'PLAYING' &&
+            this.currentPiece
+        ) {
+            this.piecesSinceWind = 0;
+            this.startWind();
+        }
     }
 
     isCollision(piece, x, y, shape = piece.shape) {
@@ -380,6 +418,10 @@ class Game {
 
         if (result.linesCleared > 0) {
             this.handleLinesCleared(result.linesCleared);
+
+            if (this.state !== 'PLAYING') {
+                return;
+            }
         }
 
         if (result.garbageRowsCleared > 0) {
@@ -432,6 +474,15 @@ class Game {
                 if (!this.bombActive) {
                     this.createBomb();
                 }
+            }
+        }
+
+        if (this.level === 4) {
+            this.piecesSinceWind = Math.min(this.piecesSinceWind + 1, 5);
+
+            if (this.piecesSinceWind >= 5 && !this.windActive) {
+                this.piecesSinceWind = 0;
+                this.startWind();
             }
         }
     }
@@ -648,13 +699,21 @@ class Game {
         };
 
         this.score += points[lineCount] || 0;
+        this.checkWindLevelComplete();
     }
 
     checkWindLevelComplete() {
-        //Chỉ xử lý khi người chơi đang ở level 4
-        // Kiểm tra tổng số dòng đã cóa có đạt ít nhất 8 dòng hay chưa
-        // nếu đạt mục tiêu, chuyển trạng thái game sang level_complete
-        // Dừng Tetrimino hiênj tại để tiếp tục chơi sau khi thắng.
+        if (
+            this.level !== 4 ||
+            this.lines < this.targetWindLines ||
+            this.state !== 'PLAYING'
+        ) {
+            return;
+        }
+
+        this.state = 'LEVEL_COMPLETE';
+        this.currentPiece = null;
+        this.endWind();
     }
 
     getGhostY() {
@@ -818,8 +877,7 @@ class Game {
         } else if (this.state === 'LEVEL_COMPLETE') {
             const subtitles = {
                 1: 'Bạn đã xóa đủ 3 Garbage Row',
-                2: 'Bạn đã sống sót qua 3 vụ nổ Bomb',
-                3: 'Bạn đã vượt qua 3 đợt khóa cột'
+                4: 'Bạn đã xóa đủ 8 dòng khi có gió'
             };
 
             this.drawOverlay(
