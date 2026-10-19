@@ -257,7 +257,44 @@ Xóa được ít nhất **8 hàng** trong Level 4. Khi đạt mục tiêu, trò
 - Khi Restart, trạng thái gió và các bộ đếm được đặt lại.
 - Xóa đủ 8 hàng sẽ hoàn thành Level và không tiếp tục điều khiển khối.
 
-## 14. Xử lý lỗi và trường hợp biên
+## 14. Level 5 – Reverse Controls
+
+### Mục tiêu
+
+Thử thách khả năng điều khiển của người chơi bằng cách đảo chiều di chuyển ngang trong một khoảng thời gian nhất định. Khi hiệu ứng hoạt động, lệnh di chuyển sang trái sẽ khiến Tetromino dịch sang phải và ngược lại.
+
+### Cơ chế và luật xử lý
+
+- Khi đang chơi Level 5 và hiệu ứng đảo điều khiển chưa hoạt động, sau mỗi **6 Tetromino được khóa**, hệ thống kích hoạt một đợt đảo điều khiển.
+- Mỗi đợt kéo dài **5 giây**.
+- Trong thời gian hiệu ứng, mọi thao tác di chuyển ngang phải được đảo chiều thống nhất, dù thao tác được gọi từ bàn phím hay nút trên giao diện.
+- Chỉ đảo chiều di chuyển trái/phải. Xoay khối, rơi xuống, Hard Drop và Hold giữ nguyên chức năng.
+- Việc đảo chiều không được bỏ qua kiểm tra va chạm. Nếu vị trí mới không hợp lệ, Tetromino không di chuyển.
+- Không kích hoạt chồng hai đợt. Bộ đếm thời gian chỉ cập nhật khi trạng thái game là `PLAYING`; khi Pause, hiệu ứng không giảm thời gian.
+- Khi hết 5 giây, hiệu ứng kết thúc và ghi nhận một đợt đã vượt qua. Hệ thống tiếp tục đếm số khối được khóa cho đợt sau.
+- Nếu người chơi bị `GAME_OVER` trước khi một đợt kết thúc, đợt đó không được tính là đã vượt qua.
+
+### Điều kiện hoàn thành
+
+Vượt qua **3 đợt đảo điều khiển**. Một đợt chỉ được tính khi thời gian 5 giây kết thúc tự nhiên trong lúc trò chơi vẫn đang diễn ra. Khi hoàn thành mục tiêu, chuyển trạng thái sang `LEVEL_COMPLETE` và dừng khối hiện tại.
+
+### Trạng thái cần theo dõi
+
+`piecesSinceReverse`, `reverseActive`, `reverseRemaining`, `reverseDuration`, `reverseRoundsCompleted`, `targetReverseRounds`.
+
+### Kiểm thử
+
+- Level 5 có thể được chọn từ giao diện.
+- Đợt đảo điều khiển bắt đầu khi đủ 6 khối được khóa và chưa có hiệu ứng nào hoạt động.
+- Hiệu ứng kéo dài 5 giây và không bị kích hoạt chồng lên nhau.
+- Khi hiệu ứng hoạt động, trái thành phải và phải thành trái; khi kết thúc, cách điều khiển trở lại bình thường.
+- Xoay, rơi xuống, Hard Drop và Hold không bị đảo chiều.
+- Kiểm tra va chạm vẫn hoạt động khi điều khiển đã đảo chiều.
+- Pause không làm thời gian hiệu ứng tiếp tục giảm; Restart đặt lại toàn bộ trạng thái Level 5.
+- Đợt chỉ được tính khi kết thúc tự nhiên; Game Over không được tính là vượt qua đợt.
+- Vượt qua 3 đợt sẽ chuyển sang `LEVEL_COMPLETE`.
+
+## 15. Xử lý lỗi và trường hợp biên
 
 - Không cho phép Tetromino đi ra ngoài biên Board.
 - Không cho phép các khối chồng lên ô đã bị chiếm.
@@ -267,7 +304,7 @@ Xóa được ít nhất **8 hàng** trong Level 4. Khi đạt mục tiêu, trò
 - Các cơ chế theo thời gian phải dừng khi tạm dừng và được khởi tạo lại khi bắt đầu ván mới.
 - Cơ chế Level phải tương thích với Collision, Lock, Line Clear và Game Over.
 
-## 15. Tiêu chí hoàn thành dự án
+## 16. Tiêu chí hoàn thành dự án
 
 - Core Game hoạt động với đủ bảy loại Tetromino.
 - Movement, Rotation, Gravity, Collision, Lock và Line Clear hoạt động đúng.
@@ -278,10 +315,11 @@ Xóa được ít nhất **8 hàng** trong Level 4. Khi đạt mục tiêu, trò
 - Level 2 có Bomb tự phát nổ và xử lý thay đổi Board.
 - Level 3 có cột bị khóa tạm thời.
 - Level 4 có gió đẩy khối và điều kiện hoàn thành 8 dòng.
+- Level 5 đảo điều khiển trong thời gian giới hạn và hoàn thành sau 3 đợt.
 - Restart đưa game và tiến trình của Level về trạng thái ban đầu.
 - Các test case quan trọng ở từng Level được kiểm tra trước khi nộp.
 
-## 16. Sơ đồ thành phần
+## 17. Sơ đồ thành phần
 
 ```text
 TETRIS WEB GAME
@@ -307,5 +345,6 @@ TETRIS WEB GAME
     |-- Level 1: Garbage Row
     |-- Level 2: Bomb Attack
     |-- Level 3: Blocked Column
-    `-- Level 4: Wind Gust
+    |-- Level 4: Wind Gust
+    `-- Level 5: Reverse Controls
 ```

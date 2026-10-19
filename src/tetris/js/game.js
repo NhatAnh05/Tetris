@@ -103,6 +103,12 @@ class Game {
         this.windDirection = 1;
     }
 
+    resetReverseProgress() {
+        // Đặt lại số khối đã khóa kể từ đợt đảo điều khiển gần nhất.
+        // Tắt trạng thái đảo điều khiển và đưa thời gian còn lại về 0.
+        // Đặt số đợt đã vượt qua về 0.
+    }
+
     start() {
         this.board.reset();
         this.currentPiece = null;
@@ -221,6 +227,13 @@ class Game {
         }
     }
 
+    updateReverseControls(deltaTime) {
+        // Chỉ cập nhật khi đang ở Level 5 và hiệu ứng đảo điều khiển đang hoạt động.
+        // Giảm thời gian còn lại dựa trên deltaTime.
+        // Khi thời gian còn lại bằng 0, gọi endReverseControls().
+        // Nếu trạng thái game thay đổi sau khi kết thúc hiệu ứng, không xử lý tiếp phần gameplay của Level 5.
+    }
+
     startWind() {
         if (this.level !== 4 || this.windActive || !this.isPlaying()) {
             return;
@@ -231,6 +244,7 @@ class Game {
         this.windPushRemaining = this.windPushInterval;
         this.windDirection = Math.random() < 0.5 ? -1 : 1;
     }
+
 
     applyWindPush() {
         if (!this.windActive || !this.currentPiece || !this.isPlaying()) {
@@ -262,6 +276,18 @@ class Game {
         }
     }
 
+    startReverseControls() {
+        // Chỉ bắt đầu khi đang chơi Level 5 và chưa có đợt đảo điều khiển nào hoạt động.
+        // Bật trạng thái reverseActive.
+        // Gán thời gian còn lại bằng reverseDuration (5000 ms).
+    }
+
+    endReverseControls() {
+        // Tắt trạng thái đảo điều khiển và đưa thời gian còn lại về 0.
+        // Tăng số đợt đảo điều khiển đã vượt qua.
+        // Gọi checkReverseLevelComplete() để kiểm tra điều kiện thắng.
+    }
+
     isCollision(piece, x, y, shape = piece.shape) {
         if (this.board.isCollision(piece, x, y, shape)) {
             return true;
@@ -284,6 +310,12 @@ class Game {
         }
 
         return false;
+    }
+
+    getReverseDirection(direction) {
+        // Nhận hướng ngang: -1 là trái, 1 là phải.
+        // Nếu đang ở Level 5 và hiệu ứng đang hoạt động, trả về hướng ngược lại.
+        // Nếu không, trả về hướng ban đầu.
     }
 
     moveLeft() {
@@ -657,6 +689,12 @@ class Game {
         return true;
     }
 
+    handleReverseLock() {
+        // Chỉ xử lý khi đang chơi Level 5.
+        // Khi hiệu ứng chưa hoạt động, tăng bộ đếm số Tetromino đã khóa.
+        // Khi bộ đếm đạt 6, đặt lại bộ đếm và gọi startReverseControls().
+    }
+
     advanceBlockedColumn() {
         if (this.blockedColumn !== null) {
             this.blockedTurns--;
@@ -714,6 +752,13 @@ class Game {
         this.state = 'LEVEL_COMPLETE';
         this.currentPiece = null;
         this.endWind();
+    }
+
+    checkReverseLevelComplete() {
+        // Chỉ xử lý khi đang ở Level 5 và game vẫn ở trạng thái PLAYING.
+        // Kiểm tra số đợt đã vượt qua có đạt targetReverseRounds (3) hay chưa.
+        // Nếu đạt mục tiêu, chuyển trạng thái sang LEVEL_COMPLETE.
+        // Dừng khối hiện tại để người chơi không tiếp tục điều khiển sau khi thắng.
     }
 
     getGhostY() {
